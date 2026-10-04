@@ -83,12 +83,21 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
     // Handles a notification from the system that an event has
     // been triggered for the given song
     function onSong(contentRefId, songEvent as Media.SongEvent, playbackPosition) as Void {
-    	if ($.debug) {
-    		System.println("onSong Event (" + d_events[songEvent] + "): " + getSongName(contentRefId) + " at position " + playbackPosition);
-    	}
-	
 		var audio = findAudioByRefId(contentRefId);
-		if (audio == null) { return; }
+		if (audio == null) {
+			if ($.debug) {
+				System.println("Ignoring event for content that is no longer stored: " + contentRefId);
+			}
+			return;
+		}
+
+		if ($.debug) {
+			var eventName = songEvent.toString();
+			if ((songEvent >= 0) && (songEvent < d_events.size())) {
+				eventName = d_events[songEvent];
+			}
+			System.println("onSong Event (" + eventName + "): " + audio.title() + " at position " + playbackPosition);
+		}
 		
 		if (songEvent == START) {
 			// set the artwork

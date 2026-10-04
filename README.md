@@ -29,15 +29,17 @@ technical debt and should happen as the retained modules are refactored.
 
 Reference build target: Forerunner 965 (`fr965`).
 
-## Temporary Plex setup
+## Plex setup
 
-Until the planned Plex sign-in flow is implemented, configure these values in
-the Connect IQ application settings:
+Open **Settings → App Settings → Plex sign in** on the watch. The app displays
+a short code and asks Garmin Connect Mobile to open `plex.tv/link` on the
+phone. After the code is approved, the app discovers the account's Plex Media
+Servers and automatically selects the best available HTTPS connection,
+preferring an owned server and a local connection.
 
-- **Server Address**: the HTTPS address of the Plex Media Server.
-- **Plex token**: a valid Plex authentication token.
-
-The manual token setup is temporary and is intended only for development.
+The current implementation uses Plex's legacy short-PIN token exchange because
+Connect IQ does not provide the Ed25519 signing support needed by Plex's newer
+device-JWT flow. Migrating to the JWT flow remains planned security work.
 
 ## License and attribution
 

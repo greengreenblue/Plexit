@@ -1,10 +1,4 @@
 <settings>
-	<setting propertyKey="@Properties.plex_server_url" title="@Strings.ServerAddress">
-		<settingConfig type="alphaNumeric" required="true" />
-	</setting>
-	<setting propertyKey="@Properties.plex_token" title="@Strings.ServerKey">
-		<settingConfig type="alphaNumeric" required="true" />
-	</setting>
 	<setting propertyKey="@Properties.skip_30s" title="@Strings.skip_30s">
 		<settingConfig type="boolean" required="true" />
 	</setting>

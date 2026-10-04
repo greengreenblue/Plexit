@@ -3,6 +3,8 @@
     
     <string id="ServerAddress">Server Address</string>
     <string id="ServerKey">Plex token</string>
+    <string id="PlexSignIn">Plex sign in</string>
+    <string id="PlexNotConnected">Not connected</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
     <string id="debug">Enable Debugging</string>

@@ -1,6 +1,4 @@
 <properties>
-	<property id="plex_server_url" type="string">https://example.plex.direct:32400</property>
-	<property id="plex_token" type="string">token</property>
 	<property id="skip_30s" type="boolean">true</property>
 	<property id="debug" type="boolean">false</property>
 </properties>

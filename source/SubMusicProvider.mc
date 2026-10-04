@@ -13,10 +13,12 @@ module SubMusic {
         }
 
         function getProviderSettings() {
+            var serverUrl = Application.Storage.getValue(Storage.PLEX_SERVER_URL);
+            var serverToken = Application.Storage.getValue(Storage.PLEX_SERVER_TOKEN);
             return {
-                "api_url" => Application.Properties.getValue("plex_server_url"),
+                "api_url" => serverUrl,
                 "api_usr" => null,
-                "api_key" => Application.Properties.getValue("plex_token"),
+                "api_key" => serverToken,
             };
         }
 

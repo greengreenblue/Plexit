@@ -18,16 +18,10 @@ module SubMusic {
 				}
 				return MenuBase.load([
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.ServerAddress),
-						SUBLABEL => Application.Properties.getValue("plex_server_url"),
-						METHOD => "plex_server_url"
+						LABEL => WatchUi.loadResource(Rez.Strings.PlexSignIn),
+						SUBLABEL => method(:plexStatus),
+						METHOD => method(:onPlexSignIn),
 					},
-					// POTENTIAL PASSWORD EXPOSURE, KEEP DISABLED
-					// {
-					// 	LABEL => WatchUi.loadResource(Rez.Strings.ServerKey),
-					// 	SUBLABEL => Application.Properties.getValue("plex_token"),
-					// 	METHOD => "plex_token"
-					// },
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.skip_30s),
 						SUBLABEL => WatchUi.loadResource(Rez.Strings.skip_30s_sublabel),
@@ -41,6 +35,18 @@ module SubMusic {
 						OPTION => method(:stateDebug),
 					},
 				]);
+			}
+
+			function plexStatus() {
+				var serverName = Application.Storage.getValue(Storage.PLEX_SERVER_NAME);
+				if (serverName == null) {
+					return WatchUi.loadResource(Rez.Strings.PlexNotConnected);
+				}
+				return serverName;
+			}
+
+			function onPlexSignIn() {
+				WatchUi.pushView(new PlexLoginView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 			}
 
 			function onDetail(item as WatchUi.MenuItem) {

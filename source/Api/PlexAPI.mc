@@ -21,6 +21,13 @@ class PlexAPI extends Api {
         d_params.put("X-Plex-Platform", "Chrome");
         d_params.put("X-Plex-Device", System.getDeviceSettings().partNumber);
         d_params.put("X-Plex-Device-Name", client());
+
+		d_options[:headers].put("X-Plex-Product", "SubMusic");
+		d_options[:headers].put("X-Plex-Version", (new SubMusicVersion(null)).toString());
+		d_options[:headers].put("X-Plex-Client-Identifier", PlexAccount.clientId());
+		d_options[:headers].put("X-Plex-Platform", "Garmin Connect IQ");
+		d_options[:headers].put("X-Plex-Device", "Garmin Watch");
+		d_options[:headers].put("X-Plex-Device-Name", System.getDeviceSettings().partNumber);
     }
 
     function identity(callback) {
@@ -123,6 +130,14 @@ class PlexAPI extends Api {
 
         Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
     }
+
+    function playlist(callback, params, id) {
+		Api.setCallback(callback);
+
+        var url = url() + "/playlists/" + id;
+        params = Utils.merge(d_params, params);
+        Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
+    }
     
     /**
      * stream
@@ -140,8 +155,9 @@ class PlexAPI extends Api {
 		params = SubMusic.Utils.merge(params, d_params);
 
 		// additional options
-    	var options = {
-    		:method => Communications.HTTP_REQUEST_METHOD_GET,
+		var options = {
+			:method => Communications.HTTP_REQUEST_METHOD_GET,
+			:headers => d_options[:headers],
           	:responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_AUDIO,
           	:mediaEncoding => encoding,
 			:fileDownloadProgressCallback => method(:onProgress),
@@ -166,8 +182,9 @@ class PlexAPI extends Api {
 		params = SubMusic.Utils.merge(params, d_params);
 
 		// additional options
-    	var options = {
-    		:method => Communications.HTTP_REQUEST_METHOD_GET,
+		var options = {
+			:method => Communications.HTTP_REQUEST_METHOD_GET,
+			:headers => d_options[:headers],
           	:responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_AUDIO,
           	:mediaEncoding => encoding,
 			:fileDownloadProgressCallback => method(:onProgress),
@@ -211,6 +228,7 @@ class PlexAPI extends Api {
 
 		// additional options
 		var options = {
+			:headers => d_options[:headers],
 			:maxWidth => 100,
 			:maxHeight => 100,
 			:fileDownloadProgressCallback => method(:onProgress),
@@ -237,5 +255,6 @@ class PlexAPI extends Api {
 	function updateKey(key) {
 		Api.updateKey(key);
 		d_params.put("X-Plex-Token", key);
+		d_options[:headers].put("X-Plex-Token", key);
 	}
 }

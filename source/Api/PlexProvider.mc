@@ -164,7 +164,10 @@ class PlexProvider {
 	}
 
 	function on_do_playlist(response) {
-		d_response.add(plex_to_playlist(response));
+		var metadata = response["Metadata"];
+		if ((metadata instanceof Lang.Array) && (metadata.size() > 0)) {
+			d_response.add(plex_to_playlist(metadata[0]));
+		}
 
 		d_action = null;
 		d_count = MAX_COUNT;
@@ -354,7 +357,7 @@ class PlexProvider {
         d_params.put("X-Plex-Container-Start", d_offset);
 
 		if (d_action == PLEX_PLAYLIST) {
-			d_api.playlists_items(self.method(:on_do_playlist), d_params, d_id);
+			d_api.playlist(self.method(:on_do_playlist), d_params, d_id);
 			return;
 		}
 		if (d_action == PLEX_PLAYLISTS) {

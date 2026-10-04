@@ -36,6 +36,12 @@ module SubMusic {
 
 			SONGS_TODO,		// array of song ids of todo songs (refId == null)
 
+			PLEX_CLIENT_ID,
+			PLEX_ACCOUNT_TOKEN,
+			PLEX_SERVER_NAME,
+			PLEX_SERVER_URL,
+			PLEX_SERVER_TOKEN,
+
 			VERSION = 200,	// version string of store
 		}
 
