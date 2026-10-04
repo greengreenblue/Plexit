@@ -53,7 +53,13 @@ class AudioSync extends Deferrable {
 		f_progress.invoke(progress());
 		
 		// start download
-		d_provider.getRefId(d_todo[0].id(), d_todo[0].mime(), d_todo[0].type(), method(:onDownloaded));
+		d_provider.getRefId(
+			d_todo[0].id(),
+			d_todo[0].mime(),
+			d_todo[0].mediaKey(),
+			d_todo[0].type(),
+			method(:onDownloaded)
+		);
 		return Deferrable.defer();
 	}
 

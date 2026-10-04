@@ -18,8 +18,9 @@ class PlexProvider {
     private var d_offset = OFFSET;      // defines the offset for the ranged request
 	private var d_count = MAX_COUNT;	// defines the number of objects to be received in ranged requests
 
-    private var d_id;       // required for getPlaylist, getPlaylistSongs, getRefId, getArtwork
-	private var d_encoding;				// encoding parameter needed for stream
+	private var d_id;       // required for getPlaylist, getPlaylistSongs, getRefId, getArtwork
+	private var d_mediaKey;			// Plex Part key used for direct downloads
+	private var d_directStream = false;	// retry a failed direct MP3 download through Plex transcoding
 	private var d_response;				// construct full response
     
 	enum {
@@ -228,13 +229,23 @@ class PlexProvider {
 				time = 0;
 			}
 
-			var container = song["Media"][0]["Part"][0]["container"];
+			var container = null;
+			var mediaKey = null;
+			var media = song["Media"];
+			if ((media instanceof Lang.Array) && (media.size() > 0)) {
+				var parts = media[0]["Part"];
+				if ((parts instanceof Lang.Array) && (parts.size() > 0)) {
+					container = parts[0]["container"];
+					mediaKey = parts[0]["key"];
+				}
+			}
 			d_response.add(new Song({
 				"id" => song["ratingKey"],
 				"title" => song["title"],
 				"artist" => song["grandparentTitle"],
 				"time" => time.toNumber() / 1000,
 				"mime" => containerToMime(container),
+				"media_key" => mediaKey,
 				"art_id" => song["art"],
 			}));
 		}
@@ -246,23 +257,44 @@ class PlexProvider {
 	 *
 	 *  returns a refId for a song by id (this downloads the song)
 	 */	
-	function getRefId(id, mime, type, callback) {
+	function getRefId(id, mime, mediaKey, type, callback) {
 		d_callback = callback;
+		d_id = id;
+		d_mediaKey = mediaKey;
 
-		d_encoding = Utils.mimeToEncoding(mime);
-		if (d_encoding == Media.ENCODING_INVALID) {
-			// default to mp3 transcoding 
-			d_encoding = Media.ENCODING_MP3;
+		// Preserve an existing MP3 without a lossy re-encode. Any failure is
+		// retried through the deterministic Plex transcode path below.
+		d_directStream = isDirectMp3(mime, mediaKey);
+		if (d_directStream) {
+			d_params = { "download" => 1 };
+		} else {
+			prepareMp3Transcode();
 		}
-
-		d_params = {
-			"path" => "/library/metadata/" + id,
-			"download" => 1,
-			"X-Plex-Client-Profile-Extra" => "add-transcode-target(type=musicProfile&context=streaming&protocol=hls&container=mpegts&audioCodec=aac,mp3)"
-		};
 
 		d_action = PLEX_STREAM;
 		do_();
+	}
+
+	function isDirectMp3(mime, mediaKey) {
+		return (mime instanceof Lang.String)
+			&& mime.equals("audio/mpeg")
+			&& (mediaKey instanceof Lang.String)
+			&& !mediaKey.equals("");
+	}
+
+	function prepareMp3Transcode() {
+		d_directStream = false;
+		d_params = {
+			"path" => "/library/metadata/" + d_id,
+			"download" => 1,
+			"protocol" => "hls",
+			"directPlay" => 0,
+			"directStream" => 0,
+			"audioCodec" => "mp3",
+			"maxAudioBitrate" => 192,
+			"musicBitrate" => 192,
+			"X-Plex-Client-Profile-Extra" => "add-transcode-target(type=musicProfile&context=streaming&protocol=hls&container=mpegts&audioCodec=mp3)"
+		};
 	}
 
 	function on_do_stream(contentRef) {
@@ -340,7 +372,11 @@ class PlexProvider {
 			return;
 		}
 		if (d_action == PLEX_STREAM) {
-			d_api.music_transcode(self.method(:on_do_stream), d_params, d_encoding);
+			if (d_directStream) {
+				d_api.stream(self.method(:on_do_stream), d_params, d_mediaKey, Media.ENCODING_MP3);
+			} else {
+				d_api.music_transcode(self.method(:on_do_stream), d_params, Media.ENCODING_MP3);
+			}
 			return;
 		}
 		if (d_action == PLEX_GET_ART) {
@@ -380,7 +416,17 @@ class PlexProvider {
 		// no valid action defined
 	}
 
-    function onError(error) {
+	function onError(error) {
+		// A file reported as MP3 can still be unsuitable for the watch or the
+		// direct Part URL can fail. Transparently retry it as MP3/192 kbps once.
+		if ((d_action == PLEX_STREAM) && d_directStream) {
+			if ($.debug) {
+				System.println("PlexProvider direct MP3 download failed; retrying transcoded: " + error);
+			}
+			prepareMp3Transcode();
+			do_();
+			return;
+		}
 
         // if response too large and limit is possible
 		if ((error instanceof SubMusic.GarminSdkError)
