@@ -18,7 +18,7 @@ class SubMusicContentIterator extends Media.ContentIterator {
 
     // Determine if the the current track can be skipped.
     function canSkip() {
-        return true;			// probably behaviour should depend on podcast/playlist type
+        return true;
     }
 
     // Get the current media content object.
@@ -126,14 +126,7 @@ class SubMusicContentIterator extends Media.ContentIterator {
 			metadata.artist = audio.artist();
 		}
 		
-		// default playback is 0, unless in podcast mode, some position is stored before and position is not within five seconds of the end
-		var playbackStartPos = 0;	
-		if (d_playable.podcast_mode()
-			&& (audio.playback() != null)) {
-			playbackStartPos = audio.playback();
-		}
-
 		// return content
-		return new Media.ActiveContent(contentRef, metadata, playbackStartPos);
+		return new Media.ActiveContent(contentRef, metadata, 0);
 	}
 }

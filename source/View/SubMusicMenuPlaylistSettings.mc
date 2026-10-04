@@ -31,12 +31,6 @@ module SubMusic {
                         SUBLABEL => null,
                         METHOD => method(:onShuffle),
                     },
-                    {
-                        LABEL => WatchUi.loadResource(Rez.Strings.Menu_PodcastMode_label),
-                        SUBLABEL => WatchUi.loadResource(Rez.Strings.Menu_PodcastMode_sublabel),
-                        METHOD => method(:onPodcastMode),
-                        OPTION => method(:isPodcastMode),
-                    },
                     new Menu.SongsLocal(
                         WatchUi.loadResource(Rez.Strings.Songs_label),
                         d_iplaylist.songs(),
@@ -49,10 +43,6 @@ module SubMusic {
                         OPTION => method(:isOffline),
                     },
                 ]);
-            }
-
-            function isPodcastMode() {
-                return d_iplaylist.podcast();
             }
 
             function isOffline() {
@@ -72,10 +62,6 @@ module SubMusic {
                 iplayable.loadPlaylist(d_id, null);
                 iplayable.shuffleIdcs(true);
                 Media.startPlayback(null);
-            }
-
-            function onPodcastMode() {
-                d_iplaylist.setPodcast(!d_iplaylist.podcast());     // flip podcast mode
             }
 
             function sublabel() {

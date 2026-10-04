@@ -3,8 +3,8 @@ class Audio extends Storable {
 
 	hidden var d_audio;
 
-	enum { SONG, PODCAST_EPISODE, END }		// only add types at end, as these are stored
-	static private var s_types = ["song", "podcast_episode"];
+	enum { SONG, END }
+	static private var s_types = ["song"];
 
 	// storage for playable class
 	hidden var d_storage = {
@@ -19,11 +19,7 @@ class Audio extends Storable {
 
 		Storable.initialize({ "id" => id, "type" => type, });
 
-		if (type.equals(PODCAST_EPISODE)) {
-			d_audio = new IEpisode(id);
-		} else {
-			d_audio = new ISong(id);
-		}
+		d_audio = new ISong(id);
 	}
 	
 	// getters

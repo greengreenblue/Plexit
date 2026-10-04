@@ -65,12 +65,6 @@ module SubMusic {
 				// 	var isong = new ISong(id);
 				// 	isong.remove();					// remove from Store
 				// }
-				// ids = EpisodeStore.getIds();
-				// for (var idx = 0; idx != ids.size(); ++idx) {
-				// 	var id = ids[idx];
-				// 	var iepisode = new IEpisode(id);
-				// 	iepisode.remove();					// remove from Store
-				// }
 				// ids = ArtworkStore.getIds();
 				// for (var idx = 0; idx < ids.size(); ++idx) {
 				// 	var id = ids[idx];

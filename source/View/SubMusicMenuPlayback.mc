@@ -21,7 +21,6 @@ module SubMusic {
 						METHOD => method(:onPlayAll),
 					},
 					new Menu.PlaylistsLocal(WatchUi.loadResource(Rez.Strings.playbackMenuTitle)),
-					new Menu.PodcastsLocal(WatchUi.loadResource(Rez.Strings.Podcasts_label)),
 					new Menu.More(),
 					new Menu.Settings(),
 					{

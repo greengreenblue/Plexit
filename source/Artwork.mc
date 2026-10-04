@@ -2,8 +2,8 @@ using SubMusic.Storage;
 
 class Artwork extends Storable {
 
-	enum { SONG, ARTIST, ALBUM, PLAYLIST, SEARCH, PODCAST, END }		// only add types at end, as these are stored
-    static private var s_types = [ "song", "artist", "album", "playlist", "search", "podcast" ];
+	enum { SONG, ARTIST, ALBUM, PLAYLIST, SEARCH, END }
+    static private var s_types = [ "song", "artist", "album", "playlist", "search" ];
 
     hidden var d_storage = {
         "id" => null,

@@ -18,31 +18,16 @@ module SubMusic {
 				}
 				return MenuBase.load([
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.ApiStandard),
-						SUBLABEL => method(:sublabel_API_standard),
-						METHOD => "API_standard"
-					},
-					{
 						LABEL => WatchUi.loadResource(Rez.Strings.ServerAddress),
-						SUBLABEL => Application.Properties.getValue("subsonic_API_URL"),
-						METHOD => "subsonic_API_URL"
-					},
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.ServerUser),
-						SUBLABEL => Application.Properties.getValue("subsonic_API_usr"),
-						METHOD => "subsonic_API_usr"
+						SUBLABEL => Application.Properties.getValue("plex_server_url"),
+						METHOD => "plex_server_url"
 					},
 					// POTENTIAL PASSWORD EXPOSURE, KEEP DISABLED
 					// {
 					// 	LABEL => WatchUi.loadResource(Rez.Strings.ServerKey),
-					// 	SUBLABEL => Application.Properties.getValue("subsonic_API_key"),
-					// 	METHOD => "subsonic_API_key"
+					// 	SUBLABEL => Application.Properties.getValue("plex_token"),
+					// 	METHOD => "plex_token"
 					// },
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.ApiAuthMethod),
-						SUBLABEL => method(:sublabel_AUTH_method),
-						METHOD => "subsonic_AUTH_method"
-					},
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.skip_30s),
 						SUBLABEL => WatchUi.loadResource(Rez.Strings.skip_30s_sublabel),
@@ -60,24 +45,6 @@ module SubMusic {
 
 			function onDetail(item as WatchUi.MenuItem) {
 				WatchUi.pushView(new TextView(item.getSubLabel()), null, WatchUi.SLIDE_IMMEDIATE);
-			}
-
-			function sublabel_API_standard() {
-				var api_typ = Application.Properties.getValue("API_standard");
-				var api_map = {
-					Storage.ApiStandard.AMPACHE 	=> WatchUi.loadResource(Rez.Strings.ApiStandardAmpache),
-					Storage.ApiStandard.SUBSONIC 	=> WatchUi.loadResource(Rez.Strings.ApiStandardSubsonic),
-					Storage.ApiStandard.PLEX 		=> WatchUi.loadResource(Rez.Strings.ApiStandardPlex),
-				};
-				return api_map[api_typ];
-			}
-
-			function sublabel_AUTH_method() {
-				var api_aut = Application.Properties.getValue("subsonic_AUTH_method");
-				if (api_aut == Storage.ApiAuthMethod.API_AUTH) {
-					return WatchUi.loadResource(Rez.Strings.ApiAuthAPI);
-				}
-				return WatchUi.loadResource(Rez.Strings.ApiAuthHTTP);
 			}
 
 			function stateSkip30s() {

@@ -104,21 +104,6 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
     		return;
     	}
     	
-    	// record time if podcast mode
-		var iplayable = new SubMusic.IPlayable();
-    	if (!iplayable.podcast_mode()) {
-    		return;
-    	}
-    	
-    	if ((songEvent == SKIP_NEXT)
-			|| (songEvent == SKIP_PREVIOUS)
-			|| (songEvent == STOP)
-			|| (songEvent == PAUSE)
-			|| (songEvent == COMPLETE)) {
-
-			// record playback position
-    		audio.setPlayback(playbackPosition);
-    	}   		
     }
 
 	function findAudioByRefId(refId) {
@@ -136,16 +121,14 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
 		if ($.debug) {
 			System.println("SubMusicContentDelegate::findAudioByRefId( refId: " + refId + " ) - not guessed");
 		}
-		var ids = [ SongStore.getIds(), EpisodeStore.getIds() ];
-		for (var typ = 0; typ != Audio.END; ++typ) {
-			for (var idx = 0; idx != ids[typ].size(); ++idx) {
-				audio = new Audio(ids[typ][idx], typ);
+		var ids = SongStore.getIds();
+		for (var idx = 0; idx != ids.size(); ++idx) {
+				audio = new Audio(ids[idx], Audio.SONG);
 
 				// return if correct
 				if (audio.refId() == refId) {
 					return audio;
 				}
-			}
 		}
 		return null;
 	}

@@ -30,18 +30,15 @@ class AudioSync extends Deferrable {
 			isong.remove();					// remove from Store
 		}
 		
-		// now get the todos from songs and episodes
-		var types = [ Audio.SONG, Audio.PODCAST_EPISODE];
-		ids = [ SongStore.getIds(), EpisodeStore.getIds() ];
-		for (var typ = 0; typ != Audio.END; ++typ) {
-			for (var idx = 0; idx != ids[typ].size(); ++idx) {
-				var audio = new Audio(ids[typ][idx], typ);
+		// now get songs that have not yet been downloaded
+		ids = SongStore.getIds();
+		for (var idx = 0; idx != ids.size(); ++idx) {
+				var audio = new Audio(ids[idx], Audio.SONG);
 
 				// only add to todo if not yet stored
 				if (audio.refId() == null) {
 					d_todo.add(audio);
 				}
-			}
 		}
 		d_todo_total = d_todo.size();
 	}

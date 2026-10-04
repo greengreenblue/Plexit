@@ -34,8 +34,6 @@ module SubMusic {
 			ARTWORK_DELETE,	// array of artwork ids of todelete artwork (refCount == 0)
 			ARTWORK_PREFIX,	// starting code for all artwork storage keys (max size per key)
 
-			PODCASTS,		// dictionary where podcast id is key
-			EPISODES,		// dictionary where episodes id is key
 			SONGS_TODO,		// array of song ids of todo songs (refId == null)
 
 			VERSION = 200,	// version string of store
@@ -115,21 +113,6 @@ module SubMusic {
 					Media.deleteCachedItem(contentRef);
 				}
 			}
-		}
-	}
-
-	module ApiStandard {
-		enum {
-			SUBSONIC = 0,
-			AMPACHE = 1,
-			PLEX = 2,
-		}
-	}
-
-	module ApiAuthMethod {
-		enum {
-			API_AUTH = 0,
-			HTTP_AUTH = 1,
 		}
 	}
 }

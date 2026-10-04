@@ -1,5 +1,4 @@
 using Toybox.WatchUi;
-using SubMusic.Storage;
 
 class SubMusicServerView extends TextView {
 	
@@ -14,12 +13,7 @@ class SubMusicServerView extends TextView {
     	msg += settings["api_url"];
     	msg += "\n" + settings["api_usr"] + "\n";
     	
-		var api_map = {
-			Storage.ApiStandard.AMPACHE 	=> WatchUi.loadResource(Rez.Strings.ApiStandardAmpache),
-			Storage.ApiStandard.SUBSONIC 	=> WatchUi.loadResource(Rez.Strings.ApiStandardSubsonic),
-			Storage.ApiStandard.PLEX 		=> WatchUi.loadResource(Rez.Strings.ApiStandardPlex),
-		};
-		msg += api_map[settings["api_typ"]];
+		msg += "Plex";
     	
 		TextView.initialize(msg);
 		
@@ -44,4 +38,3 @@ class SubMusicServerView extends TextView {
 		WatchUi.pushView(new ErrorView(error), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 	}
 }
-		

@@ -16,8 +16,6 @@ module SubMusic {
 				}
 				return MenuBase.load([
 					new Menu.PlaylistsRemote(WatchUi.loadResource(Rez.Strings.Playlists_label)),
-					new Menu.PodcastsRemote(WatchUi.loadResource(Rez.Strings.Podcasts_label)),
-					// new Menu.Radiostations(WatchUi.loadResource(Rez.Strings.Radiostations_label)),
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.Donate_label), 
 						SUBLABEL => null, 

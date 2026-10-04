@@ -9,9 +9,7 @@ module SubMusic {
             "idcs" => [],
             "idx" => 0,             // suggested start index
             "shuffle" => false,
-
-            "podcast_mode" => false,    // determines playback storage
-        };
+		};
 
         function initialize(storage) {
             if ($.debug) {
@@ -19,10 +17,6 @@ module SubMusic {
             }
 
             Storable.initialize(storage);
-        }
-
-        function podcast_mode() {
-            return get("podcast_mode");
         }
 
         function songidx() {
@@ -140,10 +134,6 @@ module SubMusic {
 
         function setTypes(value) {
             return set("types", value);
-        }
-
-        function setPodcastMode(value) {
-            return set("podcast_mode", value);
         }
 
         function setShuffle(value) {
@@ -345,23 +335,6 @@ module SubMusic {
             return save();
         }
 
-        function loadPodcast(id, episodeid) {
-            if ($.debug) {
-            	System.println("IPlayable::loadPodcast( id: " + id + " episodeid: " + episodeid + ")");
-            }
-            
-            // return empty array if no id available
-            if (id == null) {
-                return false;
-            }
-
-            var ipodcast = new IPodcast(id);
-            setPodcastMode(ipodcast.podcast());
-            var ids = ipodcast.episodes();
-
-            return loadIds(ids, episodeid, Audio.PODCAST_EPISODE);
-        }
-
         function loadPlaylist(id, songid) {
             if ($.debug) {
             	System.println("IPlayable::loadPlaylist( id: " + id + " songid: " + songid + ")");
@@ -373,17 +346,13 @@ module SubMusic {
             }
 
             var iplaylist = new IPlaylist(id);
-            setPodcastMode(iplaylist.podcast());
-            var ids = iplaylist.songs();
+			var ids = iplaylist.songs();
             
             return loadIds(ids, songid, Audio.SONG);
         }
         
         function loadSongIds(ids) {
-
-            setPodcastMode(false);
-
-            return loadIds(ids, null, Audio.SONG);
+			return loadIds(ids, null, Audio.SONG);
         }
     }
 }

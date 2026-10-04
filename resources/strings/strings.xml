@@ -1,16 +1,8 @@
 <strings>
     <string id="AppName">SubMusic</string>
     
-    <string id="ApiStandard">API backend</string>
-    <string id="ApiStandardSubsonic">Subsonic API</string>
-    <string id="ApiStandardAmpache">Ampache API</string>
-    <string id="ApiStandardPlex">Plex API</string>
     <string id="ServerAddress">Server Address</string>
-    <string id="ServerUser">Username</string>
-    <string id="ServerKey">API key</string>
-    <string id="ApiAuthMethod">Authentication method (Subsonic only)</string>
-    <string id="ApiAuthAPI">API</string>
-    <string id="ApiAuthHTTP">HTTP Basic</string>
+    <string id="ServerKey">Plex token</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
     <string id="debug">Enable Debugging</string>
@@ -42,9 +34,7 @@
     <string id="Settings_label">Settings</string>
 
     <string id="Playlists_label">Playlists</string>
-    <string id="Podcasts_label">Podcasts</string>
     <string id="Songs_label">Songs</string>
-    <string id="Episodes_label">Episodes</string>
     
     <string id="confSync_PlaylistDetail_label">Playlist Detail</string>
     <string id="confSync_Test_start">Starting test...</string>
@@ -56,7 +46,6 @@
     <string id="confPlayback_NowPlaying_label">Now Playing</string>
     <string id="confPlayback_PlayAll_label">Play All</string>
     <string id="confPlayback_SelectPlaylist_label">Playlists</string>
-    <string id="confPlayback_SelectPodcast_label">Podcasts</string>
     <string id="confPlayback_SelectRadiostation_label">Radiostations</string>
     <string id="confPlayback_SelectSong_label">Songs</string>
     <string id="confPlayback_More_label">More...</string>
@@ -64,20 +53,14 @@
     <string id="placeholder_noMenuItems">Nothing to show</string>
     <string id="placeholder_loading">Loading..</string>
     <string id="placeholder_noRemotePlaylists">No Remote Playlists</string>
-    <string id="placeholder_noRemotePodcasts">No Remote Podcasts</string>
-    <string id="placeholder_noRemoteEpisodes">No Remote Episodes</string>
     <string id="placeholder_noRemoteSongs">No Remote Songs</string>
     <string id="fetchingSongs">Fetching Songs...</string>
     <string id="fetchingPlaylists">Fetching Playlists...</string>
-    <string id="fetchingPodcasts">Fetching Podcasts...</string>
-    <string id="fetchingEpisodes">Fetching Episodes...</string>
     <string id="playbackMenuTitle">Playlists</string>
 
     <string id="Menu_PlaylistSongs_title">Songs</string>
     <string id="Menu_PlayNow_label">Play Now</string>
     <string id="Menu_PlayShuffle_label">Shuffle</string>
-    <string id="Menu_PodcastMode_label">Podcast Mode</string>
-    <string id="Menu_PodcastMode_sublabel">Stores play state</string>
     <string id="Menu_Songs_label">Songs</string>
     
     <string id="Memory_label">Memory</string>

@@ -30,9 +30,6 @@ class PlexProvider {
 		PLEX_PLAYLIST_SONGS,
 		PLEX_STREAM,
 		PLEX_GET_ART,
-		PLEX_PODCAST,
-		PLEX_PODCASTS,
-		PLEX_EPISODES,
 	}
 
     function initialize(settings) {
@@ -54,14 +51,11 @@ class PlexProvider {
 	// functions:
 	// - ping				returns an object with server version
 	// - recordPlay			submit a play
-	// - getAllPlaylists	returns an array of all playlists available for Ampache user
+	// - getAllPlaylists	returns an array of all Plex music playlists
 	// - getPlaylist		returns an array of one playlist object for id
 	// - getPlaylistSongs	returns an array of songs on the playlist with id
 	// - getRefId			returns a refId for a song by id (this downloads the song)
 	// - getArtwork			returns a BitmapResource for a song id
-	// - getAllPodcasts		returns an array of all podcasts available for Ampache user
-	// - getPodcast			returns an array of one podcast object for id
-	// - getEpisodes		returns an array of episodes in the podcast with id
 	//
 	// to be added in the future:
 	// - getUpdatedPlaylists - returns array of all playlists updated since Moment
@@ -293,42 +287,6 @@ class PlexProvider {
 		d_callback.invoke(artwork);
 	}
 
-	/**
-	 * getAllPodcasts
-	 *
-	 * returns array of all podcasts available for Plex user
-	 */
-	function getAllPodcasts(callback) {
-		if ($.debug) {
-			System.println("PlexProvider::getAllPodcasts( no API method available )");
-		}
-		callback.invoke([]);
-	}
-
-	/**
-	 * getPodcast
-	 *
-	 * returns array of all podcasts available for Plex user
-	 */
-	function getPodcast(id, callback) {
-		if ($.debug) {
-			System.println("PlexProvider::getPodcast( no API method available )");
-		}
-		callback.invoke([]);
-	}
-
-	/**
-	 * getEpisodes
-	 *
-	 * returns an array of episodes in the podcast with id
-	 */
-	function getEpisodes(id, range, callback) {
-		if ($.debug) {
-			System.println("PlexProvider::getEpisodes( no API method available )");
-		}
-		callback.invoke([]);
-	}
-    
 	function checkDone(response) {
 		// if response less than limit, or collected count objects
 		// - no more requests required

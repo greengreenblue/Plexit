@@ -14,12 +14,12 @@ module SubMusic {
 		private var d_notifySyncProgress;
 		private var d_notifySyncComplete;
 
-		// playlists/podcasts to sync
-		private var d_ids;				// array of playlist/podcast ids
+		// playlists to sync
+		private var d_ids;
 		private var d_ids_total = 0;	// nr of ids in beginning
 		private var d_last = 0;			// last idx
 
-		enum { START, SCROBBLE = START, PLAYLISTS, PODCASTS, AUDIO, ARTWORK, END}
+		enum { START, SCROBBLE = START, PLAYLISTS, AUDIO, ARTWORK, END}
 		private var d_syncstage = START;	// track the stage for sync process
 
 		function initialize(notifySyncProgress, notifySyncComplete) {
@@ -81,10 +81,6 @@ module SubMusic {
 				d_ids = PlaylistStore.getIds();
 				var step = method(:stepPlaylist);
 				return new DeferredFor(0, d_ids.size(), step, done, fail);
-			} else if (idx == PODCASTS) {
-				d_ids = PodcastStore.getIds();
-				var step = method(:stepPodcast);
-				return new DeferredFor(0, d_ids.size(), step, done, fail);
 			} else if (idx == AUDIO) {
 				return new AudioSync(progress, done, fail);
 			} else if (idx == ARTWORK) {
@@ -121,33 +117,11 @@ module SubMusic {
 			return new PlaylistSync(d_ids[idx], method(:onPlaylistProgress), done, fail);
 		}
 		
-		function stepPodcast(idx, done, fail) {
-			d_last = idx;
-			return new PodcastSync(d_ids[idx], method(:onPodcastProgress), done, fail);
-		}
-
 		function onProgress(progress) {
 			d_notifySyncProgress.invoke(progress.toNumber());
 		}
 		
 		function onPlaylistProgress(progress) {
-			// if ($.debug) {
-			// 	System.println("Sync Progress: list " + (d_loop.idx() + 1) + " of " + d_loop.end() + " is on " + progress + " %");
-			// }
-
-			// progress += (100 * d_last);
-			// progress /= d_ids_total.toFloat();
-			
-			// progress /= 2;
-			// progress += 50;		// add 50% done as that was the scrobble part
-			
-			// if ($.debug) {
-			// 	System.println(progress.toNumber());
-			// }
-			d_notifySyncProgress.invoke(progress.toNumber());
-		}
-		
-		function onPodcastProgress(progress) {
 			// if ($.debug) {
 			// 	System.println("Sync Progress: list " + (d_loop.idx() + 1) + " of " + d_loop.end() + " is on " + progress + " %");
 			// }
