@@ -24,7 +24,7 @@ module SongStore {
 
 	var d_songs = new ObjectStore(Storage.SONGS);			// allows fast indexing by id
 	var d_delete = new ArrayStore(Storage.SONGS_DELETE);	// allows fast access 
-	var d_todo = new ArrayStore(Storage.SONGS_TODO);		// allows fast access
+	var d_songTodos = new ArrayStore(Storage.SONGS_TODO);	// allows fast access
 
 	function get(id) {
 //		if ($.debug) {
@@ -43,9 +43,9 @@ module SongStore {
 	}
 
 	function getTodos() {
-		var ret = new [d_todo.size()];
-		for (var idx = 0; idx != d_todo.size(); ++idx) {
-			ret[idx] = d_todo.get(idx);
+		var ret = new [d_songTodos.size()];
+		for (var idx = 0; idx != d_songTodos.size(); ++idx) {
+			ret[idx] = d_songTodos.get(idx);
 		}
 		return ret;
 	}
@@ -70,17 +70,17 @@ module SongStore {
 		var ondelete = (d_delete.indexOf(id) >= 0);
 		if (delete && !ondelete) {
 			d_delete.add(id);
-			d_todo.remove(id);
+			d_songTodos.remove(id);
 		} else if (!delete && ondelete) {
 			d_delete.remove(id);
 		}
 		// update todo tracking
 		var todo = (song.refId() == null);
-		var ontodo = (d_todo.indexOf(id) >= 0);
+		var ontodo = (d_songTodos.indexOf(id) >= 0);
 		if (!delete && todo && !ontodo) {
-			d_todo.add(id);
+			d_songTodos.add(id);
 		} else if (!todo && ontodo) {
-			d_todo.remove(id);
+			d_songTodos.remove(id);
 		}
 
 		// save details of the song

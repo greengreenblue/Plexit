@@ -8,8 +8,8 @@ class AudioSync extends Deferrable {
 	private var f_progress; 		// callback on progress
 	
 	// store sync size
-	private var d_todo = [];		// array of IAudio objects
-	private var d_todo_total;		// the number of items that had to be synced
+	private var d_pendingAudio = [];	// array of IAudio objects
+	private var d_pendingTotal;		// the number of items that had to be synced
 
 	function initialize(progress, done, fail) {
 		if ($.debug) {
@@ -37,15 +37,15 @@ class AudioSync extends Deferrable {
 
 				// only add to todo if not yet stored
 				if (audio.refId() == null) {
-					d_todo.add(audio);
+					d_pendingAudio.add(audio);
 				}
 		}
-		d_todo_total = d_todo.size();
+		d_pendingTotal = d_pendingAudio.size();
 	}
 	
 	function sync() {
 		// if songs all finished, complete this task
-		if (d_todo.size() == 0) {
+		if (d_pendingAudio.size() == 0) {
 	   		return Deferrable.complete();				// set complete
 		}
 
@@ -54,10 +54,10 @@ class AudioSync extends Deferrable {
 		
 		// start download
 		d_provider.getRefId(
-			d_todo[0].id(),
-			d_todo[0].mime(),
-			d_todo[0].mediaKey(),
-			d_todo[0].type(),
+			d_pendingAudio[0].id(),
+			d_pendingAudio[0].mime(),
+			d_pendingAudio[0].mediaKey(),
+			d_pendingAudio[0].type(),
 			method(:onDownloaded)
 		);
 		return Deferrable.defer();
@@ -66,10 +66,10 @@ class AudioSync extends Deferrable {
 	function progress() {
 		// determine what is left to do
 		var todo = 0;
-		if (d_todo != null) { todo = d_todo.size(); }
+		if (d_pendingAudio != null) { todo = d_pendingAudio.size(); }
 		
-		var done = d_todo_total - todo;
-		var progress = (100 * done) / d_todo_total.toFloat();
+		var done = d_pendingTotal - todo;
+		var progress = (100 * done) / d_pendingTotal.toFloat();
 		return progress;
 	}
 
@@ -78,42 +78,42 @@ class AudioSync extends Deferrable {
 		if ($.debug) {
 			System.println("AudioSync::onProgress( progress: " + progress + " )");
 		}
-		progress /= d_todo_total.toFloat();
+		progress /= d_pendingTotal.toFloat();
 		f_progress.invoke(progress() + progress);
 	}
 	
     // Callback for when a song is downloaded
 	function onDownloaded(refId) {
 		// update refId
-		d_todo[0].setRefId(refId);
+		d_pendingAudio[0].setRefId(refId);
 
 		// continue to next song
-		d_todo.removeAll(d_todo[0]);
+		d_pendingAudio.removeAll(d_pendingAudio[0]);
 	
 		sync();
 	}
     
-    function onError(error) {
-    	if ($.debug) {
-    		System.println("AudioSync::onError(" + error.shortString() + " : " + error.toString() + ")");
-    	}
+	function onError(error) {
+		if ($.debug) {
+			System.println("AudioSync::onError(" + error.shortString() + " : " + error.toString() + ")");
+		}
 
-    	// indicate failed sync
-//   	d_playlist.setError(error); TODO
-    	d_failed.add(d_todo[0]);
-    	
-    	// check if song in progress
-		if (d_todo[0] == null) {
+		// check if song in progress
+		if ((d_pendingAudio.size() == 0) || (d_pendingAudio[0] == null)) {
 			Deferrable.cancel(error);
 			return;
 		}
+
+		// indicate failed sync
+//   	d_playlist.setError(error); TODO
+		d_failed.add(d_pendingAudio[0]);
 		// record the cause of failure
-//	    	d_todo[0].setError(error);				TODO
+//		d_pendingAudio[0].setError(error);				TODO
 		
 		// remove first element from todo list
-		d_todo.removeAll(d_todo[0]);
+		d_pendingAudio.removeAll(d_pendingAudio[0]);
 
 		sync();
 		return;
-    }
+	}
 }
