@@ -12,9 +12,6 @@ module SubMusic {
 			}
 
 			function load() {
-				if ($.debug) {
-					System.println("Menu.Settings::load()");
-				}
 				return MenuBase.load([
 					new Menu.AppSettings(),
 					new Menu.Storage(),

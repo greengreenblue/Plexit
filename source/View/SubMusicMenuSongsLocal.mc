@@ -20,10 +20,6 @@ module SubMusic {
             }
 
             function load() {
-                if ($.debug) {
-                	System.println("Menu.SongsLocal::load()");
-                }
-
                 // remove the non local songs
                 var todelete = [];
                 for (var idx = 0; idx != d_ids.size(); ++idx) {

@@ -13,10 +13,6 @@ class Audio extends Storable {
 	};
 
 	function initialize(id, type) {
-		//if ($.debug) {
-		//	System.println("Audio::initialize( id = " + id + " type = " + type + " )");
-		//}
-
 		Storable.initialize({ "id" => id, "type" => type, });
 
 		d_audio = new ISong(id);

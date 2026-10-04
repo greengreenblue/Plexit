@@ -27,29 +27,17 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
 
     // Respond to a user ad click
     function onAdAction(adContext) {
-    	if ($.debug) {
-    		System.println("Ad Action: " + getSongName(adContext));
-    	}
     }
     
     function onCustomButton(button) {
-    	if ($.debug) {
-    		System.println("Custom Button clicked: " + button);
-    	}
     }
 
     // Respond to a thumbs-up action
     function onThumbsUp(contentRefId) {
-    	if ($.debug) {
-    		System.println("Thumbs Up: " + getSongName(contentRefId));
-    	}
     }
 
     // Respond to a thumbs-down action
     function onThumbsDown(contentRefId) {
-    	if ($.debug) {
-    		System.println("Thumbs Down: " + getSongName(contentRefId));
-    	}
     }
 
     // Respond to a command to turn shuffle on or off
@@ -58,9 +46,6 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
     }
     
     function onRepeat() {
-    	if ($.debug) {
-    		System.println("Repeat Mode change");
-    	}
     }
     
     function resetContentIterator() {
@@ -69,15 +54,9 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
     }
     
     function onMore() {
-    	if ($.debug) {
-    		System.println("onMore is called");
-    	}
     }
     
     function onLibrary() {
-    	if ($.debug) {
-    		System.println("onLibrary is called");
-    	}
     }
 
     // Handles a notification from the system that an event has
@@ -85,18 +64,7 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
     function onSong(contentRefId, songEvent as Media.SongEvent, playbackPosition) as Void {
 		var audio = findAudioByRefId(contentRefId);
 		if (audio == null) {
-			if ($.debug) {
-				System.println("Ignoring event for content that is no longer stored: " + contentRefId);
-			}
 			return;
-		}
-
-		if ($.debug) {
-			var eventName = songEvent.toString();
-			if ((songEvent >= 0) && (songEvent < d_events.size())) {
-				eventName = d_events[songEvent];
-			}
-			System.println("onSong Event (" + eventName + "): " + audio.title() + " at position " + playbackPosition);
 		}
 		
 		if (songEvent == START) {
@@ -121,15 +89,9 @@ class SubMusicContentDelegate extends Media.ContentDelegate {
 		var audio = iplayable.getAudio(iplayable.songidx());
 		if ((audio instanceof SubMusic.Audio)
 			&& (audio.refId() == refId)) {
-			if ($.debug) {
-				System.println("SubMusicContentDelegate::findAudioByRefId( refId: " + refId + " ) - guessed");
-			}
 			return audio;
 		}
 		// if trick not successful, do exhaustive search
-		if ($.debug) {
-			System.println("SubMusicContentDelegate::findAudioByRefId( refId: " + refId + " ) - not guessed");
-		}
 		var ids = SongStore.getIds();
 		for (var idx = 0; idx != ids.size(); ++idx) {
 				audio = new Audio(ids[idx], Audio.SONG);

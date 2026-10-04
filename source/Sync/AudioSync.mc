@@ -12,9 +12,6 @@ class AudioSync extends Deferrable {
 	private var d_pendingTotal;		// the number of items that had to be synced
 
 	function initialize(progress, done, fail) {
-		if ($.debug) {
-			System.println("AudioSync::initialize()");
-		}
 		Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 		
 		f_progress = progress;
@@ -75,9 +72,6 @@ class AudioSync extends Deferrable {
 
 	// handle callback on intermediate progress
 	function onProgress(progress) {
-		if ($.debug) {
-			System.println("AudioSync::onProgress( progress: " + progress + " )");
-		}
 		progress /= d_pendingTotal.toFloat();
 		f_progress.invoke(progress() + progress);
 	}
@@ -94,10 +88,6 @@ class AudioSync extends Deferrable {
 	}
     
 	function onError(error) {
-		if ($.debug) {
-			System.println("AudioSync::onError(" + error.shortString() + " : " + error.toString() + ")");
-		}
-
 		// check if song in progress
 		if ((d_pendingAudio.size() == 0) || (d_pendingAudio[0] == null)) {
 			Deferrable.cancel(error);

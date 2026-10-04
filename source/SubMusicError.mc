@@ -18,9 +18,6 @@ module SubMusic {
 		private var d_type;
 		
 		function initialize(type) {
-			if ($.debug) {
-				System.println(s_name + "::" + Error.typeToString(type));
-			}
 			d_type = type;
 		}
 		
@@ -73,10 +70,6 @@ module SubMusic {
 		function initialize(type) {
 			Error.initialize(Error.API);
 
-			if ($.debug) {
-				System.println(s_name + "::" + ApiError.typeToString(type));
-			}
-			
 			d_type = type;
 		}
 		
@@ -130,10 +123,6 @@ module SubMusic {
 		function initialize(type) {
 			Error.initialize(Error.HTTP);
 			d_type = type;
-
-			if ($.debug) {
-				System.println(HttpError.toString());
-			}
 		}
 
 		function http_type() {
@@ -208,10 +197,6 @@ module SubMusic {
 		function initialize(responseCode) {
 			Error.initialize(Error.HTTP);
 			d_responseCode = responseCode;
-
-			if ($.debug) {
-				System.println(GarminSdkError.toString());
-			}
 		}
 	
 		static function is(responseCode) {
@@ -248,41 +233,3 @@ module SubMusic {
 	    }
 	}
 }
-
-/* 
-
-- Garmin IQ network/http errors
-	- responsecode not in http response codes
-	- INVALID_HTTP_BODY_IN_REQUEST, etc...
-	
-API-defined:
-	- Subsonic: responsecode 200,
-		0 	A generic error.
-		10 	Required parameter is missing.
-		20 	Incompatible Subsonic REST protocol version. Client must upgrade.
-		30 	Incompatible Subsonic REST protocol version. Server must upgrade.
-		40 	Wrong username or password.
-		41 	Token authentication not supported for LDAP users.
-		50 	User is not authorized for the given operation.
-		60 	The trial period for the Subsonic server is over. Please upgrade to Subsonic Premium. Visit subsonic.org for details.
-		70 	The requested data was not found.
-	- Ampache: responsecode 200
-		4700 Access Control not Enabled		The API is disabled. Enable 'access_control' in your config
-    	4701 Received Invalid Handshake		This is a temporary error, this means no valid session was passed or the handshake failed
-	    4703 Access Denied					The requested method is not available, 
-	    	You can check the error message for details about which feature is disabled
-	    4704 Not Found						The API could not find the requested object
-	    4705 Missing						This is a fatal error, the service requested a method that the API does not implement
-	    4706 Depreciated					This is a fatal error, the method requested is no longer available
-	    4710 Bad Request					Used when you have specified a valid method but something about the input is incorrect, invalid or missing, 
-	    	You can check the error message for details, but do not re-attempt the exact same request
-	    4742 Failed Access Check	        Access denied to the requested object or function for this user
-	- common errors
-		- login problem (subsonic 40, 41, 60) (ampache 4701)
-		- access problem (subsonic 50) (ampache 4742)
-		- data not found (subsonic 70) (ampache 4704)
-		- server/client problem (subsonic 20, 30) (ampache 4700, 4703, 4705, 4706)
-		- bad request (subsonic 10) (ampache 4710)
-		- bad response 
-		
-*/

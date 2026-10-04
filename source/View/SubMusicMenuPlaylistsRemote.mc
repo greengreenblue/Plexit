@@ -17,10 +17,6 @@ module SubMusic {
             }
 
             function load() {
-                if ($.debug) {
-                	System.println("Menu.PlaylistsRemote::load()");
-                }
-
                 // if already loading, do nothing, wait for response
                 if (d_loading) {
                     return false;

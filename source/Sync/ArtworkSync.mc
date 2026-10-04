@@ -11,9 +11,6 @@ class ArtworkSync extends Deferrable {
 	private var d_todo_total;		// the number of items that had to be synced
 
 	function initialize(progress, done, fail) {
-		if ($.debug) {
-			System.println("ArtworkSync::initialize()");
-		}
 		Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 		
 		f_progress = progress;
@@ -91,10 +88,6 @@ class ArtworkSync extends Deferrable {
 	}
     
     function onError(error) {
-    	if ($.debug) {
-    		System.println("ArtworkSync::onError(" + error.shortString() + " : " + error.toString() + ")");
-    	}
-
     	// indicate failed sync
 //   	d_playlist.setError(error); TODO
     	// d_failed.add(d_todo[0]);

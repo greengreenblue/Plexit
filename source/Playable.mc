@@ -12,10 +12,6 @@ module SubMusic {
 		};
 
         function initialize(storage) {
-            if ($.debug) {
-            	System.println("Playable::initialize( storage = " + storage + " )");
-            }
-
             Storable.initialize(storage);
         }
 
@@ -68,10 +64,6 @@ module SubMusic {
     class IPlayable extends Playable {
 
         function initialize() {
-            if ($.debug) {
-            	System.println("IPlayable::initialize()");
-            }
-
             var storage = PlayableStore.get();
             if (storage == null) {
                 storage = {};
@@ -141,23 +133,9 @@ module SubMusic {
         }
 
         function removeAudioByIdx(idx) {
-            if ($.debug) {
-            	System.println("IPlayable::removeAudioByIdx(idx: " + idx + " )");
-            	System.println(ids());
-            	System.println(types());
-            	System.println(idcs());
-            }
-
             ids().remove(ids()[idx]);   // remove the id from ids
             types().remove(types()[idx]);   // remove the type from types
             idcs().remove(idx);       // remove the idx from idcs
-
-            if ($.debug) {
-            	System.println(ids().toString());
-            	System.println(types().toString());
-            	System.println(idcs());
-            	System.println("IPlayable::removeAudioByIdx() - done");
-            }
         }
 
         function removeRemoved() {
@@ -206,10 +184,6 @@ module SubMusic {
 
             // if not shuffle, nothing to do
             var saved = save();
-            if ($.debug) {
-            	System.println("IPlayable::removeRemoved now " + d_storage);
-            }
-            
             if (!shuffle()) {
             	return saved;
             }
@@ -231,13 +205,6 @@ module SubMusic {
                 return false;
             }
 
-            if ($.debug) {
-            	System.println("Playable::shuffleIdcs() Before: " + idcs());
-            	System.println("Playable::shuffleIdcs() songids: " + ids().toString());
-            	System.println("Playable::shuffleIdcs() songids: " + types().toString());
-            	System.println("Playable::shuffleIdcs() songidx: " + songidx());
-            }
-
             // if not shuffle, generate 0:n array for idcs
             if (!shuffle) {
                 // store the current real index
@@ -247,9 +214,7 @@ module SubMusic {
                 for (var idx = 0; idx != idcs().size(); ++idx) {
                     idcs()[idx] = idx;
                 }
-                if ($.debug) {
-                	System.println("Playable::shuffleIdcs() After unshuffle:" + idcs());
-                }
+
                 return save();
             }
 
@@ -268,28 +233,16 @@ module SubMusic {
                 idcs()[other] = tmp;
             }
             
-            if ($.debug) {
-            	System.println("Playable::shuffleIdcs() After shuffle:" + idcs());
-            }
-
             // slice last songs and prepend to account for songidx
             var splitidx = songidx();
             var end = idcs().slice(0, -splitidx);
             setIdcs(idcs().slice(-splitidx, null));
             idcs().addAll(end);
             
-            if ($.debug) {
-            	System.println("Playable::shuffleIdcs() After shuffle:" + idcs());
-            }
-
             return save();
         }
 
         function loadIds(ids, audioid, type) {
-            if ($.debug) {
-            	System.println("IPlayable::loadIds( ids: " + ids + " audioid: " + audioid + " type: " + type);
-            }
-             
             var audioidx = 0;
 
             // reset ids, idcs and idx
@@ -336,10 +289,6 @@ module SubMusic {
         }
 
         function loadPlaylist(id, songid) {
-            if ($.debug) {
-            	System.println("IPlayable::loadPlaylist( id: " + id + " songid: " + songid + ")");
-            }
-            
             // return empty array if no id available
             if (id == null) {
                 return false;

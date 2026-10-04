@@ -8,9 +8,6 @@ class PlaylistSync extends Deferrable {
 	private var f_progress; 		// callback on progress
 
 	function initialize(id, progress, done, fail) {
-		if ($.debug) {
-			System.println("PlaylistSync::initialize()");
-		}
 		Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 		
 		f_progress = progress;
@@ -75,10 +72,6 @@ class PlaylistSync extends Deferrable {
 	}
     
     function onError(error) {
-    	if ($.debug) {
-    		System.println("PlaylistSync::onError(" + error.shortString() + " : " + error.toString() + ")");
-    	}
-
     	// indicate failed sync
 //   	d_iplaylist.setError(error); TODO
     	d_failed = true;

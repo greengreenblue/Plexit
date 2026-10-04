@@ -1,5 +1,5 @@
 <strings>
-    <string id="AppName">SubMusic</string>
+    <string id="AppName">PlexIt</string>
     
     <string id="ServerAddress">Server Address</string>
     <string id="ServerKey">Plex token</string>
@@ -7,8 +7,6 @@
     <string id="PlexNotConnected">Not connected</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
-    <string id="debug">Enable Debugging</string>
-    <string id="debug_sublabel">Log debug info to file</string>
 
     <string id="confSync_Title">Sync settings</string>
     <string id="confSync_StartSync_label">Sync</string>

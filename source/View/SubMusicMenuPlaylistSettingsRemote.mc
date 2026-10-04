@@ -16,10 +16,6 @@ module SubMusic {
             }
 
             function load() {
-				if ($.debug) {
-					System.println("Menu.PlaylistSettingsRemote::load()");
-				}
-
                 return MenuBase.load([
                     {
                         LABEL => "Make available offline",

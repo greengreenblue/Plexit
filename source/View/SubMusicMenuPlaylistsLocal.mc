@@ -13,15 +13,10 @@ module SubMusic {
 
             // reload the ids on request
 			function load() {
-                if ($.debug) {
-                	System.println("Menu.PlaylistsLocal::load()");
-                }
-                
                 var playlists = [];
                 var ids = PlaylistStore.getIds();
 
                 // remove the non local playlist ids
-                var todelete = [];
                 for (var idx = 0; idx != ids.size(); ++idx) {
                     var id = ids[idx];
                     var iplaylist = new IPlaylist(id);

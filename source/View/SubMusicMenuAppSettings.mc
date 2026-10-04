@@ -13,9 +13,6 @@ module SubMusic {
 			}
 
 			function load() {
-				if ($.debug) {
-					System.println("Menu.AppSettings::load()");
-				}
 				return MenuBase.load([
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.PlexSignIn),
@@ -53,9 +50,6 @@ module SubMusic {
 
 			function onToggleSkip30s() {
 				var skip30s_new = !Application.Properties.getValue("skip_30s");
-				if ($.debug) {
-					System.println("Setting skip_30s from " + Application.Properties.getValue("skip_30s") + " to " + skip30s_new);
-				}
 
 				Application.Properties.setValue("skip_30s", !Application.Properties.getValue("skip_30s"));
 				Media.requestPlaybackProfileUpdate();

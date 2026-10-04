@@ -10,9 +10,6 @@ module SubMusic {
 			}
 
 			function load() {
-				if ($.debug) {
-					System.println("Menu.Playback::load()");
-				}
 				return MenuBase.load([
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.confPlayback_PlayAll_label),

@@ -139,10 +139,6 @@ module SubMusic {
 		    function updateMenu() {
 				// set title
 				setTitle(d_menu.title());
-				if ($.debug) {
-					System.println("MenuView::updateMenu " + d_menu.title() );
-				}
-
 				// load the items
 				var idx = 0;
 				var item = d_menu.getItem(idx);
@@ -189,9 +185,6 @@ module SubMusic {
 
 			function onHide() {
 				if (!d_menu.loaded()) {
-					if ($.debug) {
-						System.println("MenuView::onHide -> will unload the menu " + d_menu.title());
-					}
 					d_menu.unload();
 				}
 			}
@@ -246,9 +239,6 @@ module SubMusic {
 				if (!(title instanceof Lang.String)) {
 					title = WatchUi.loadResource(title);
 				}
-				// if ($.debug) {
-				// 	System.println("MenuBase::initialize( title: " + title + " )");
-				// }
 				d_title = title;
 				d_loaded = loaded;
 			}
@@ -289,10 +279,6 @@ module SubMusic {
 
 			// default item loader, returns null if menu idx not found
 			function getItem(idx) {
-				// if ($.debug) {
-				// 	System.println("SubMusicMenu::getItem( idx: " + idx + " ) - " + d_title);
-				// }
-				
 				// check if item exists
 				if (idx >= d_items.size()) {
 					return null;
@@ -347,9 +333,6 @@ module SubMusic {
 			}
 
 			function setOnLoaded(callback) {
-				if ($.debug) {
-					System.println("MenuBase::setOnLoaded " + self);
-				}
 				f_loaded = callback;
 			}
 
@@ -358,10 +341,6 @@ module SubMusic {
 			}
 
 			function onLoaded(error) {
-				if ($.debug) {
-					System.println("MenuBase::onLoaded" + self);
-				}
-				
 				d_error = error;
 				d_loaded = false;		// make sure menus are reloaded, keep false
 				if (f_loaded) {	f_loaded.invoke(error); }
@@ -414,10 +393,6 @@ module SubMusic {
 			private var d_created = false;
 
 			function initialize(menu, delegate) {
-				if ($.debug) {
-					System.println("MenuLoader::initialize(" + menu.title() + ")");
-				}
-
 				// store variables if needed for non-loaded menu
 				var loaded = menu.loaded();
 				if (!loaded) {
@@ -458,9 +433,6 @@ module SubMusic {
 			}
 
 			function onLoaded(error) {
-				if ($.debug) {
-					System.println("MenuLoader::onLoaded( SubMusic.Error: " + (error instanceof SubMusic.Error) + ")");
-				}
 				// switch to error view on error
 				if (error instanceof SubMusic.Error) {
 					loadView(new ErrorView(error), null, WatchUi.SLIDE_IMMEDIATE);

@@ -42,10 +42,6 @@ class PlexProvider {
     }
 	
 	function onSettingsChanged(settings) {
-		if ($.debug) {
-			System.println("PlexProvider::onSettingsChanged");
-		}
-		
 		d_api.update(settings);
 	}
 
@@ -74,10 +70,6 @@ class PlexProvider {
     }
 
 	function on_do_ping(response) {
-		if ($.debug) {
-			System.println("PlexProvider::on_do_ping( response = " + response + ")");
-		}
-		
 		d_action = null;
 		d_callback.invoke(response);
 	}
@@ -100,10 +92,6 @@ class PlexProvider {
 	}
 
 	function on_do_record_play(response) {
-		if ($.debug) {
-			System.println("PlexProvider::on_do_record_play( response = " + response + ")");
-		}
-		
 		d_action = null;
 		d_callback.invoke(response); // expected empty response
 	}
@@ -329,20 +317,9 @@ class PlexProvider {
 			d_limit = MAX_LIMIT;
 		}
 
-		if ($.debug) {
-			System.println("PlexProvider::checkDone()");
-			System.println("Total received: " + d_response.size());
-			System.println("Last received: " + response.size());
-			System.println("Max total: " + d_count);
-			System.println("Max at once: " + d_limit);
-		}
-
 		if ((d_response.size() < d_count)		// count not reached 
 			&& (response.size() >= d_limit)) {	// limit reached
 			// request required, since response was full and count not reached
-			if ($.debug) {
-				System.println("PlexProvider::checkDone - next request");
-			}
 			d_offset += d_limit;	// increase offset
 			do_();
 			return;
@@ -420,9 +397,6 @@ class PlexProvider {
 		// A file reported as MP3 can still be unsuitable for the watch or the
 		// direct Part URL can fail. Transparently retry it as MP3/192 kbps once.
 		if ((d_action == PLEX_STREAM) && d_directStream) {
-			if ($.debug) {
-				System.println("PlexProvider direct MP3 download failed; retrying transcoded: " + error);
-			}
 			prepareMp3Transcode();
 			do_();
 			return;
@@ -434,10 +408,7 @@ class PlexProvider {
 			&& (d_limit > 1)) {
 			
 			d_limit = (d_limit / 2).toNumber();		// half the response
-			if ($.debug) {
-				System.println("PlexProvider limit was lowered to " + d_limit);
-			}
-			do_();														// retry the request
+			do_();									// retry the request
 			return;
 		}
 

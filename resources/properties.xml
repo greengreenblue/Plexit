@@ -1,4 +1,3 @@
 <properties>
 	<property id="skip_30s" type="boolean">true</property>
-	<property id="debug" type="boolean">false</property>
 </properties>

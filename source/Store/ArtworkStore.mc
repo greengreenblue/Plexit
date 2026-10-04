@@ -14,27 +14,16 @@ module ArtworkStore {
 	var d_delete = new ArrayStore(Storage.ARTWORK_DELETE);	// allows fast access 
 
 	function get(id) {
-//		if ($.debug) {
-//			System.println("ArtworkStore::get( id : " + id + " )");
-//		}
-
 		return d_artworks.get(id);
 	}
 
 	// returns artwork ids
 	function getIds() {
-		if ($.debug) {
-			System.println("ArtworkStore::getIds()");
-		}
-
 		return d_artworks.getIds();
 	}
 
 	// returns artwork objects
 	function getAll(options) {
-		if ($.debug) {
-			System.println("ArtworkStore::getAll( options: " + options + " )");
-		}
 		var artworks = [];
 		var objects = d_artworks.getValues();
 		for (var idx = 0; idx != objects.size(); ++idx) {
@@ -59,10 +48,6 @@ module ArtworkStore {
 
     // these functions should be used only internally by IArtwork class
 	function save(artwork) {
-		if ($.debug) {
-			System.println("ArtworkStore::save( artwork : " + artwork.toStorage() + " )");
-		}
-
 		// update delete tracking
 		var id = new Id(artwork.id());
 		var delete = (artwork.refCount() <= 0);
@@ -78,10 +63,6 @@ module ArtworkStore {
 	}
 
 	function remove(artwork) {
-		if ($.debug) {
-			System.println("ArtworkStore::remove( " + artwork.toStorage() + ")");
-		}
-
 		// remove from storage
 		d_artworks.remove(artwork);
 
