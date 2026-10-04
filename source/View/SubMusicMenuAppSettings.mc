@@ -49,9 +49,9 @@ module SubMusic {
 			}
 
 			function onToggleSkip30s() {
-				var skip30s_new = !Application.Properties.getValue("skip_30s");
-
-				Application.Properties.setValue("skip_30s", !Application.Properties.getValue("skip_30s"));
+				Application.Properties.setValue(
+					"skip_30s", 
+					!Application.Properties.getValue("skip_30s"));
 				Media.requestPlaybackProfileUpdate();
 			}
 

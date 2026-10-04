@@ -44,7 +44,6 @@ module SubMusic {
                 var ids = PlaylistStore.getIds();
 
                 // remove the non local playlist ids
-                var todelete = [];
                 for (var idx = 0; idx != ids.size(); ++idx) {
                     var id = ids[idx];
                     var iplaylist = new IPlaylist(id);
