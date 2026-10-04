@@ -18,21 +18,43 @@ module SubMusic {
 				}
 				return MenuBase.load([
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.Memory_label), 
-						SUBLABEL => method(:sublabel_Memory), 
-						METHOD => "cache",		// not used, null does not work
+						LABEL => WatchUi.loadResource(Rez.Strings.StorageInfo_label),
+						SUBLABEL => method(:sublabel_Cache),
+						METHOD => method(:onInfo),
 					},
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.Cache_label), 
-						SUBLABEL => method(:sublabel_Cache), 
-						METHOD => "cache",		// not used, null does not work
-					},
+					new Menu.Downloads(),
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.confSync_MoreInfo_RemoveAll_label), 
 						SUBLABEL => WatchUi.loadResource(Rez.Strings.confSync_MoreInfo_RemoveAll_sublabel),
 						METHOD => method(:onRemoveAll),
 					}
 				]);
+			}
+
+			static function onInfo() {
+				var cache = Media.getCacheStatistics();
+				var songCount = 0;
+				var songIds = SongStore.getIds();
+				for (var idx = 0; idx < songIds.size(); ++idx) {
+					if ((new ISong(songIds[idx])).refId() != null) {
+						songCount += 1;
+					}
+				}
+
+				var playlistCount = 0;
+				var playlistIds = PlaylistStore.getIds();
+				for (var idx = 0; idx < playlistIds.size(); ++idx) {
+					if ((new IPlaylist(playlistIds[idx])).local()) {
+						playlistCount += 1;
+					}
+				}
+
+				var free = cache.capacity - cache.size;
+				var message = "Downloaded\n" + formatBytes(cache.size)
+					+ "\n\nFree\n" + formatBytes(free)
+					+ "\n\nSongs  " + songCount
+					+ "\nPlaylists  " + playlistCount;
+				WatchUi.pushView(new TextView(message), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 			}
 
 			static function sublabel_Memory() as Lang.String {
@@ -94,6 +116,86 @@ module SubMusic {
 				var in = Math.floor(Math.log(bytes, 10) / Math.log(k, 10));
 				var flt = (bytes / Math.pow(k, in));
 				return flt.format("%.1f") + " " + sizes[in.toNumber()];
+			}
+		}
+
+		class Downloads extends MenuBase {
+
+			function initialize() {
+				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.Downloads_label), false);
+			}
+
+			function load() {
+				var items = [];
+				var ids = PlaylistStore.getIds();
+				for (var idx = 0; idx < ids.size(); ++idx) {
+					var playlist = new IPlaylist(ids[idx]);
+					if (playlist.local()) {
+						items.add(new Menu.DownloadSettings(playlist));
+					}
+				}
+				return MenuBase.load(items);
+			}
+		}
+
+		class DownloadSettings extends MenuBase {
+			private var d_downloadId;
+
+			function initialize(playlist) {
+				MenuBase.initialize(playlist.name(), false);
+				d_downloadId = playlist.id();
+			}
+
+			function sublabel() {
+				var playlist = new IPlaylist(d_downloadId);
+				return playlist.count() + " songs";
+			}
+
+			function load() {
+				var playlist = new IPlaylist(d_downloadId);
+				return MenuBase.load([
+					{
+						LABEL => WatchUi.loadResource(Rez.Strings.StorageInfo_label),
+						SUBLABEL => playlist.count() + " songs",
+						METHOD => method(:onInfo),
+					},
+					{
+						LABEL => WatchUi.loadResource(Rez.Strings.DeleteDownload_label),
+						SUBLABEL => null,
+						METHOD => method(:onDelete),
+					},
+				]);
+			}
+
+			function onInfo() {
+				var playlist = new IPlaylist(d_downloadId);
+				var mins = (playlist.time() / 60).toNumber();
+				var message = playlist.name() + "\n\n" + playlist.count()
+					+ " songs\n" + mins + " minutes";
+				WatchUi.pushView(new TextView(message), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
+			}
+
+			function onDelete() {
+				var playlist = new IPlaylist(d_downloadId);
+				var message = "Delete downloaded \"" + playlist.name() + "\"?";
+				WatchUi.pushView(
+					new WatchUi.Confirmation(message),
+					new SubMusicConfirmationDelegate(method(:deleteDownload)),
+					WatchUi.SLIDE_IMMEDIATE
+				);
+			}
+
+			function deleteDownload() {
+				var playlist = new IPlaylist(d_downloadId);
+				playlist.setLocal(false);
+				playlist.remove();
+
+				// Remove files that are no longer referenced by another playlist.
+				var ids = SongStore.getDeletes();
+				for (var idx = 0; idx < ids.size(); ++idx) {
+					(new ISong(ids[idx])).remove();
+				}
+				WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
 			}
 		}
 	}

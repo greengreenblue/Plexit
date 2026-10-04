@@ -6,40 +6,23 @@ using SubMusic.Storage;
 
 module SubMusic {
 	module Menu {
-		class More extends MenuBase {
+		class AddMusic extends MenuBase {
 
 			function initialize() {
-				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.More_label), false);
+				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.AddMusic_label), false);
 			}
 
 			function load() {
 				if ($.debug) {
-					System.println("Menu.More::load()");
+					System.println("Menu.AddMusic::load()");
 				}
 				return MenuBase.load([
-					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.confSync_SelectPlaylists_label)),		// Temporarily here, future: use browse
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.confSync_StartSync_label), 
+						LABEL => WatchUi.loadResource(Rez.Strings.SyncNow_label),
 						SUBLABEL => method(:getLastSyncString), 
 						METHOD => method(:onStartSync),
 					},
-					new Menu.Browse(),
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.confSync_MoreInfo_TestServer_label), 
-						SUBLABEL => null, 
-						METHOD => method(:onTestServer),
-					},
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.confSync_MoreInfo_ServerDetail_label),
-						SUBLABEL => WatchUi.loadResource(Rez.Strings.confSync_MoreInfo_ServerDetail_sublabel),
-						METHOD => method(:onServerDetail),
-					},
-					new Menu.Settings(),
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.Donate_label), 
-						SUBLABEL => null, 
-						METHOD => method(:onDonate),
-					},
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),
 				]);
 			}
 			
@@ -66,17 +49,6 @@ module SubMusic {
 				Communications.startSync();
 			}
 			
-			static function onTestServer() {
-				WatchUi.pushView(new SubMusicTestView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
-			}
-			
-			static function onServerDetail() {
-				WatchUi.pushView(new SubMusicServerView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
-			}
-			
-			static function onDonate() {
-				WatchUi.pushView(new DonateView(), new DonateDelegate(), WatchUi.SLIDE_IMMEDIATE);
-			}	
 		}
 	}
 }

@@ -19,11 +19,6 @@ module SubMusic {
 					new Menu.AppSettings(),
 					new Menu.Storage(),
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.AppName) + " " + WatchUi.loadResource(Rez.Strings.Version_label), 
-						SUBLABEL => (new SubMusicVersion(null)).toString(), 
-						METHOD => "version",		// not used, null does not work
-					},
-					{
 						LABEL => WatchUi.loadResource(Rez.Strings.Donate_label), 
 						SUBLABEL => null, 
 						METHOD => method(:onDonate),

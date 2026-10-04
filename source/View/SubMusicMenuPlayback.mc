@@ -14,20 +14,19 @@ module SubMusic {
 					System.println("Menu.Playback::load()");
 				}
 				return MenuBase.load([
-					new Menu.NowPlaying(),
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.confPlayback_PlayAll_label),
 						SUBLABEL => null,
 						METHOD => method(:onPlayAll),
 					},
-					new Menu.PlaylistsLocal(WatchUi.loadResource(Rez.Strings.playbackMenuTitle)),
-					new Menu.More(),
-					new Menu.Settings(),
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.Donate_label), 
-						SUBLABEL => null, 
-						METHOD => method(:onDonate),
+						LABEL => WatchUi.loadResource(Rez.Strings.Menu_PlayShuffle_label),
+						SUBLABEL => WatchUi.loadResource(Rez.Strings.ShuffleAll_sublabel),
+						METHOD => method(:onShuffleAll),
 					},
+					new Menu.PlaylistsLocal(WatchUi.loadResource(Rez.Strings.playbackMenuTitle)),
+					new Menu.AddMusic(),
+					new Menu.Settings(),
 				]);
 			}
 
@@ -37,9 +36,12 @@ module SubMusic {
 				iplayable.loadSongIds(SongStore.getIds());
 				Media.startPlayback(null);
 			}
-			
-			static function onDonate() {
-				WatchUi.pushView(new DonateView(), new DonateDelegate(), WatchUi.SLIDE_IMMEDIATE);
+
+			static function onShuffleAll() {
+				var iplayable = new SubMusic.IPlayable();
+				iplayable.loadSongIds(SongStore.getIds());
+				iplayable.shuffleIdcs(true);
+				Media.startPlayback(null);
 			}
 		}
 	}

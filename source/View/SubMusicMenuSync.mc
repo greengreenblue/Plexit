@@ -20,14 +20,12 @@ module SubMusic {
 				}
 				
 				return MenuBase.load([
-					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.confSync_SelectPlaylists_label)),		// Temporarily here, future: use browse
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.confSync_StartSync_label), 
+						LABEL => WatchUi.loadResource(Rez.Strings.SyncNow_label),
 						SUBLABEL => method(:getLastSyncString), 
 						METHOD => method(:onStartSync),
 					},
-					new Menu.Browse(),
-					new Menu.Settings(),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),
 				]);
 			}
 			
@@ -59,11 +57,7 @@ module SubMusic {
 				return new SyncDelegate(method(:onBack));
 			}
 			
-			function onBack() {
-				var msg = "Note: \"Start syncing music\" might not complete. Use Playback > More.";
-				WatchUi.switchToView(new TextView(msg), new TapDelegate(self.method(:pop)), WatchUi.SLIDE_IMMEDIATE);
-				return false; // still go back
-			}
+			function onBack() { return false; }
 
 			// pop the view method for onBack behaviour
 			function pop() {

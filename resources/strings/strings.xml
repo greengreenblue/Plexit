@@ -26,6 +26,13 @@
     <string id="confSync_MoreInfo_RemoveAll_sublabel">Reset application storage</string>
     
     <string id="Donate_label">Donate</string>
+    <string id="AddMusic_label">Add music</string>
+    <string id="SyncNow_label">Sync now</string>
+    <string id="ShuffleAll_sublabel">All downloaded songs</string>
+    <string id="PlexPlayback_label">Plex &amp; playback</string>
+    <string id="StorageInfo_label">Info</string>
+    <string id="Downloads_label">Downloads</string>
+    <string id="DeleteDownload_label">Delete download</string>
     <string id="Browse_label">Browse</string>
     <string id="More_label">More...</string>
     <string id="About_label">About</string>

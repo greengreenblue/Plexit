@@ -9,7 +9,7 @@ module SubMusic {
 		class AppSettings extends MenuBase {
 
 			function initialize() {
-				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.AppSettings_label), false);
+				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.PlexPlayback_label), false);
 			}
 
 			function load() {
@@ -27,12 +27,6 @@ module SubMusic {
 						SUBLABEL => WatchUi.loadResource(Rez.Strings.skip_30s_sublabel),
 						METHOD => method(:onToggleSkip30s),
 						OPTION => method(:stateSkip30s),
-					},
-					{
-						LABEL => WatchUi.loadResource(Rez.Strings.debug),
-						SUBLABEL => WatchUi.loadResource(Rez.Strings.debug_sublabel),
-						METHOD => method(:onToggleDebug),
-						OPTION => method(:stateDebug),
 					},
 				]);
 			}
@@ -65,20 +59,6 @@ module SubMusic {
 
 				Application.Properties.setValue("skip_30s", !Application.Properties.getValue("skip_30s"));
 				Media.requestPlaybackProfileUpdate();
-			}
-
-			function stateDebug() {
-				return Application.Properties.getValue("debug");
-			}
-
-			function onToggleDebug() {
-				var debug_new = !Application.Properties.getValue("debug");
-				if ($.debug) {
-					System.println("Setting debug from " + Application.Properties.getValue("debug") + " to " + debug_new);
-				}
-
-				Application.Properties.setValue("debug", debug_new);
-				$.debug = debug_new;	// update the global debug flag
 			}
 
 			function delegate() {

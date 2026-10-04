@@ -31,18 +31,12 @@ module SubMusic {
                         SUBLABEL => null,
                         METHOD => method(:onShuffle),
                     },
-                    new Menu.SongsLocal(
-                        WatchUi.loadResource(Rez.Strings.Songs_label),
-                        d_iplaylist.songs(),
-                        method(:onSongSelect)
-                    ),
-                    {
-                        LABEL => "Make available offline",
-                        SUBLABEL => null,
-                        METHOD => "offline",
-                        OPTION => method(:isOffline),
-                    },
-                ]);
+					new Menu.SongsLocal(
+						WatchUi.loadResource(Rez.Strings.Songs_label),
+						d_iplaylist.songs(),
+						method(:onSongSelect)
+					),
+				]);
             }
 
             function isOffline() {
@@ -82,13 +76,6 @@ module SubMusic {
                 Media.startPlayback(null);
             }
 
-            function onOfflineToggle(item) {
-                d_iplaylist.setLocal(item.isEnabled());
-            }
-
-            function delegate() {
-                return new MenuDelegate(method(:onOfflineToggle), null);
-            }
-        }
+		}
     }
 }
