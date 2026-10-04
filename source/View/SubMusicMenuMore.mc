@@ -18,12 +18,64 @@ module SubMusic {
 				}
 				return MenuBase.load([
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.SyncNow_label),
-						SUBLABEL => method(:getLastSyncString), 
+						LABEL => method(:getSyncLabel),
+						SUBLABEL => method(:getSyncStatus),
 						METHOD => method(:onStartSync),
 					},
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),
 				]);
+			}
+
+			function sublabel() {
+				return getPendingSummary();
+			}
+
+			static function getSyncLabel() {
+				if (hasPendingChanges()) {
+					return WatchUi.loadResource(Rez.Strings.SyncPending_label);
+				}
+				return WatchUi.loadResource(Rez.Strings.SyncNow_label);
+			}
+
+			static function getSyncStatus() {
+				var pending = getPendingSummary();
+				if (pending != null) {
+					return pending;
+				}
+				return getLastSyncString();
+			}
+
+			static function getPendingSummary() {
+				var songs = 0;
+				var changes = false;
+				var ids = PlaylistStore.getIds();
+				for (var idx = 0; idx < ids.size(); ++idx) {
+					var playlist = new IPlaylist(ids[idx]);
+					if (playlist.local() && !playlist.synced()) {
+						songs += playlist.count();
+						changes = true;
+					} else if (!playlist.local() && playlist.linked()) {
+						changes = true;
+					}
+				}
+
+				// Before playlist metadata is fetched, playlist.count() is the best
+				// estimate. During/after a partial sync, the todo store is exact.
+				var todoSongs = SongStore.getTodos().size();
+				if (todoSongs > songs) {
+					songs = todoSongs;
+				}
+				if (songs > 0) {
+					return songs + " songs waiting";
+				}
+				if (changes || (SongStore.getDeletes().size() > 0)) {
+					return WatchUi.loadResource(Rez.Strings.SyncChangesWaiting);
+				}
+				return null;
+			}
+
+			static function hasPendingChanges() {
+				return getPendingSummary() != null;
 			}
 			
 			static function getLastSyncString() {

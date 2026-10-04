@@ -186,6 +186,9 @@ class IPlaylist extends Playlist {
 			return false;
 		}
 		d_local = local;
+		// A changed offline selection always requires a sync. This also covers
+		// removing a previously downloaded playlist.
+		d_synced = false;
 
 		return save();		// forced save, as local
 	}

@@ -21,8 +21,8 @@ module SubMusic {
 				
 				return MenuBase.load([
 					{
-						LABEL => WatchUi.loadResource(Rez.Strings.SyncNow_label),
-						SUBLABEL => method(:getLastSyncString), 
+						LABEL => Menu.AddMusic.getSyncLabel(),
+						SUBLABEL => Menu.AddMusic.getSyncStatus(),
 						METHOD => method(:onStartSync),
 					},
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),

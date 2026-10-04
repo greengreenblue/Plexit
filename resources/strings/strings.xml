@@ -28,6 +28,8 @@
     <string id="Donate_label">Donate</string>
     <string id="AddMusic_label">Add music</string>
     <string id="SyncNow_label">Sync now</string>
+    <string id="SyncPending_label">Sync pending</string>
+    <string id="SyncChangesWaiting">Changes waiting</string>
     <string id="ShuffleAll_sublabel">All downloaded songs</string>
     <string id="PlexPlayback_label">Plex &amp; playback</string>
     <string id="StorageInfo_label">Info</string>
