@@ -2,7 +2,7 @@ using Toybox.System;
 using Toybox.Media;
 using Toybox.Lang;
 
-module SubMusic {
+module Plexit {
 	module Utils {
 
 		// implementation of bubble sort, returning idcs to sort original

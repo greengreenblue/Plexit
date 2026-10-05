@@ -1,6 +1,6 @@
 class AudioSync extends Deferrable {
 
-	private var d_provider = SubMusic.Provider.get();
+	private var d_provider = Plexit.Provider.get();
 	private var d_audio = null;		// front of the todos
 	
 	private var d_failed = [];		// array of all failed

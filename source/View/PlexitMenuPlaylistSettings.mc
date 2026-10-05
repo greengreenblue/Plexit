@@ -1,0 +1,77 @@
+using Toybox.WatchUi;
+using Plexit;
+
+module Plexit {
+    module Menu {
+        class PlaylistSettings extends MenuBase {
+
+            private var d_id;
+            private var d_iplaylist;
+
+            function initialize(iplaylist) {
+                MenuBase.initialize(iplaylist.name(), false);
+
+                d_iplaylist = iplaylist;
+                d_id = iplaylist.id();
+            }
+
+            function load() {
+                return MenuBase.load([
+                    {
+                        LABEL => WatchUi.loadResource(Rez.Strings.Menu_PlayNow_label),
+                        SUBLABEL => null,
+                        METHOD => method(:onPlay),
+                    },
+                    {
+                        LABEL => WatchUi.loadResource(Rez.Strings.Menu_PlayShuffle_label),
+                        SUBLABEL => null,
+                        METHOD => method(:onShuffle),
+                    },
+					new Menu.SongsLocal(
+						WatchUi.loadResource(Rez.Strings.Songs_label),
+						d_iplaylist.songs(),
+						method(:onSongSelect)
+					),
+				]);
+            }
+
+            function isOffline() {
+                return d_iplaylist.local();
+            }
+
+            function onPlay() {
+                // start playback with playlist
+                var iplayable = new Plexit.IPlayable();
+                iplayable.loadPlaylist(d_id, null);
+                Media.startPlayback(null);
+            }
+
+            function onShuffle() {
+                // start playback with playlist in shuffle mode
+                var iplayable = new Plexit.IPlayable();
+                iplayable.loadPlaylist(d_id, null);
+                iplayable.shuffleIdcs(true);
+                Media.startPlayback(null);
+            }
+
+            function sublabel() {
+                var iplaylist = new IPlaylist(d_id);
+                var mins = (iplaylist.time() / 60).toNumber().toString();
+                var sublabel = mins + " mins";
+                if (!iplaylist.synced()) {
+                    sublabel += " - needs sync";
+                }
+                return sublabel;
+            }
+
+            // provide custom handler for choosing a song from the list
+            function onSongSelect(songid) {
+                // start playback with playlist and song combination
+                var iplayable = new Plexit.IPlayable();
+                iplayable.loadPlaylist(d_id, songid);
+                Media.startPlayback(null);
+            }
+
+		}
+    }
+}

@@ -1,50 +1,35 @@
-# SubMusic Plex fork
+# Plexit
 
-This repository is an in-progress Plex-only fork of
-[memen45/SubMusic](https://github.com/memen45/SubMusic), a Garmin Connect IQ
-audio content provider licensed under GPL-3.0.
+Plexit is a free, open-source Plex music client for Garmin watches. It connects
+directly to a Plex Media Server, downloads selected playlists over Wi-Fi and
+plays them offline through Garmin's native music player.
 
-The project currently preserves the original SubMusic name and application ID.
-Both will be changed before an independent release.
+## Features
 
-## Current scope
+- Secure Plex PIN sign-in and automatic server discovery.
+- Browse and select Plex music playlists.
+- Background playlist synchronization over Wi-Fi.
+- Automatic FLAC, ALAC, AAC, OGG and Opus conversion to MP3 at 192 kb/s.
+- Direct download of compatible MP3 files with automatic transcode fallback.
+- Offline playback, playlist shuffle and play-all.
+- Download status, storage statistics and per-playlist deletion.
+- Plex listening-count updates during synchronization.
 
-- Browse Plex music playlists.
-- Select playlists for offline synchronization.
-- Download and transcode tracks through Plex Media Server.
-- Play downloaded tracks through the Garmin system music player.
-- Shuffle playlists and play all downloaded songs.
-- Upload listening counts during synchronization.
-- Display album artwork where the device supports it.
+## Development
 
-Support for Subsonic, Airsonic, Ampache, Nextcloud Music, and podcasts has been
-removed from this fork.
+Plexit currently targets Connect IQ SDK 9.2.0. Reference devices:
 
-## Development status
+- Forerunner 965 (`fr965`)
+- Fenix 9 Pro 51 mm (`fenix9pro51mm`)
 
-The compatibility baseline builds with Connect IQ SDK 9.2.0. The legacy code
-currently requires Monkey C type checking to be disabled; `monkey.jungle`
-contains that temporary setting. Restoring modern type checking is tracked as
-technical debt and should happen as the retained modules are refactored.
+Build with `./build.sh` or `./build-fenix.sh`, then start the Connect IQ
+simulator and run `./run.sh` or `./run-fenix.sh`.
 
-Reference build target: Forerunner 965 (`fr965`).
+## License and credits
 
-## Plex setup
+Plexit is licensed under GPL-3.0. See [LICENSE](LICENSE).
 
-Open **Settings → App Settings → Plex sign in** on the watch. The app displays
-a short code and asks Garmin Connect Mobile to open `plex.tv/link` on the
-phone. After the code is approved, the app discovers the account's Plex Media
-Servers and automatically selects the best available HTTPS connection,
-preferring an owned server and a local connection.
-
-The current implementation uses Plex's legacy short-PIN token exchange because
-Connect IQ does not provide the Ed25519 signing support needed by Plex's newer
-device-JWT flow. Migrating to the JWT flow remains planned security work.
-
-## License and attribution
-
-This fork remains licensed under GPL-3.0. See [LICENSE](LICENSE).
-
-Copyright and attribution for the original SubMusic project are retained in
-the Git history and license. Modified versions distributed as binaries must
-provide the corresponding source code under GPL-3.0.
+The project began as a fork of
+[memen45/SubMusic](https://github.com/memen45/SubMusic). Its GPL license and
+Git history are preserved. Plexit is an independent project and is not
+affiliated with Plex, Garmin or the original SubMusic maintainers.

@@ -1,10 +1,10 @@
-using SubMusic.ScrobbleStore;
+using Plexit.ScrobbleStore;
 
-module SubMusic {
+module Plexit {
 
 	class ScrobbleSync extends Deferrable {
 		
-		private var d_provider = SubMusic.Provider.get();
+		private var d_provider = Plexit.Provider.get();
 		
 		private var f_progress;
 		
@@ -49,8 +49,8 @@ module SubMusic {
 		
 		function onError(error) {
 			// some problem with the network - we can skip this and try again later
-			if ((error instanceof SubMusic.HttpError)
-				|| (error instanceof SubMusic.GarminSdkError)) {
+			if ((error instanceof Plexit.HttpError)
+				|| (error instanceof Plexit.GarminSdkError)) {
 				
 				// to prevent unwanted OOM errors, better remove the scrobble
 				onRecordPlay(null);

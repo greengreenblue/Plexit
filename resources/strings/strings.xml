@@ -1,5 +1,5 @@
 <strings>
-    <string id="AppName">PlexIt</string>
+    <string id="AppName">Plexit</string>
     
     <string id="ServerAddress">Server Address</string>
     <string id="ServerKey">Plex token</string>
@@ -17,9 +17,6 @@
     
     <string id="confSync_MoreInfo_label">More Info</string>
     <string id="confSync_MoreInfo_title">More Info</string>
-    <string id="confSync_MoreInfo_TestServer_label">Test Server</string>
-    <string id="confSync_MoreInfo_ServerDetail_label">Server</string>
-    <string id="confSync_MoreInfo_ServerDetail_sublabel">Show server settings</string>
     <string id="confSync_MoreInfo_RemoveAll_label">Remove Data</string>
     <string id="confSync_MoreInfo_RemoveAll_sublabel">Reset application storage</string>
     
@@ -51,8 +48,6 @@
     <string id="configurePlaybackMessage">Configure\nPlayback</string>
     
     <string id="confPlayback_Title">Play</string>
-    <string id="confPlayback_NowPlaying_title">Now Playing</string>
-    <string id="confPlayback_NowPlaying_label">Now Playing</string>
     <string id="confPlayback_PlayAll_label">Play All</string>
     <string id="confPlayback_SelectPlaylist_label">Playlists</string>
     <string id="confPlayback_SelectRadiostation_label">Radiostations</string>

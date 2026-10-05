@@ -1,6 +1,6 @@
-using SubMusic.Storage;
+using Plexit.Storage;
 
-module SubMusic {
+module Plexit {
 
 	class Scrobble {
 		

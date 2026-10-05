@@ -1,4 +1,6 @@
-cd /Users/mato/Development/SubMusic
+#!/usr/bin/env bash
+set -e
+cd -- "$(dirname -- "$0")"
 
 GARMIN_SDK="/Users/mato/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-9.2.0-2026-06-09-92a1605b2"
 
@@ -6,4 +8,4 @@ GARMIN_SDK="/Users/mato/Library/Application Support/Garmin/ConnectIQ/Sdks/connec
   -f monkey.jungle \
   -d fr965 \
   -y /Users/mato/Development/garmin-development-key/developer_key \
-  -o /tmp/SubMusic-fr965.prg
+  -o /tmp/Plexit-fr965.prg

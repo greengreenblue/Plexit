@@ -2,7 +2,7 @@ using Toybox.Lang;
 using Toybox.Media;
 using Toybox.System;
 using Toybox.WatchUi;
-using SubMusic;
+using Plexit;
 
 class Api {
 
@@ -22,7 +22,7 @@ class Api {
 
     function initialize(url_add) {
         d_url_add = url_add;
-        d_client = (WatchUi.loadResource(Rez.Strings.AppName) + "-v" + (new SubMusicVersion(null).toString()));
+        d_client = (WatchUi.loadResource(Rez.Strings.AppName) + "-v" + (new PlexitVersion(null).toString()));
     }
 
     function client() {
@@ -65,9 +65,9 @@ class Api {
 	 * returns http/sdk errors if found
 	 */
 	function checkResponse(responseCode as Lang.Number, data as Lang.Dictionary or Null) {
-		var error = SubMusic.HttpError.is(responseCode);
+		var error = Plexit.HttpError.is(responseCode);
 		if (error) { return error; }
-		error = SubMusic.GarminSdkError.is(responseCode);
+		error = Plexit.GarminSdkError.is(responseCode);
         if (error) { return error; }
         return self.checkApiError(responseCode, data);
     }
@@ -91,13 +91,13 @@ class Api {
     static function isDictionary(data) {
         // check type of received object
         if (data instanceof Lang.Dictionary) { return null; }
-        return new SubMusic.ApiError(SubMusic.ApiError.BADRESPONSE);
+        return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
     static function isArray(data) {
         // check type of received object
         if (data instanceof Lang.Array) { return null; }
-        return new SubMusic.ApiError(SubMusic.ApiError.BADRESPONSE);
+        return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
     function checkContentResponse(responseCode, data) {
@@ -106,7 +106,7 @@ class Api {
 
         // check type of received object
         if (data instanceof Media.ContentRef) { return null; }
-        return new SubMusic.ApiError(SubMusic.ApiError.BADRESPONSE);
+        return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
     function checkImageResponse(responseCode, data) {
@@ -115,7 +115,7 @@ class Api {
 
         // check type of received object
         if (data instanceof WatchUi.BitmapResource) { return null; }
-        return new SubMusic.ApiError(SubMusic.ApiError.BADRESPONSE);
+        return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
 	function onProgress(totalBytesTransferred, fileSize) {

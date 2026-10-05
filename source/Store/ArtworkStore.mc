@@ -1,6 +1,6 @@
 using Toybox.System;
 using Toybox.Application;
-using SubMusic.Storage;
+using Plexit.Storage;
 
 /**
  * module ArtworkStore

@@ -1,6 +1,6 @@
 class PlaylistSync extends Deferrable {
 
-	private var d_provider = SubMusic.Provider.get();
+	private var d_provider = Plexit.Provider.get();
 	private var d_iplaylist;	
 	
 	private var d_failed = false;	// true if anything failed
@@ -78,10 +78,10 @@ class PlaylistSync extends Deferrable {
 	    d_iplaylist.setSynced(!d_failed);
 
 		// 'not found' can return through api or http status codes
-		var api_not_found = (error instanceof SubMusic.ApiError)
-						&& (error.api_type() == SubMusic.ApiError.NOTFOUND);
-		var http_not_found = (error instanceof SubMusic.HttpError)
-						&& (error.http_type() == SubMusic.HttpError.NOT_FOUND);
+		var api_not_found = (error instanceof Plexit.ApiError)
+						&& (error.api_type() == Plexit.ApiError.NOTFOUND);
+		var http_not_found = (error instanceof Plexit.HttpError)
+						&& (error.http_type() == Plexit.HttpError.NOT_FOUND);
 
 		if (api_not_found || http_not_found) {
 
@@ -91,7 +91,7 @@ class PlaylistSync extends Deferrable {
 			return;
 		}
 
-		if ((error instanceof SubMusic.GarminSdkError)
+		if ((error instanceof Plexit.GarminSdkError)
 			&& (error.respCode() == Communications.NETWORK_RESPONSE_TOO_LARGE)) {
 			Deferrable.complete();
 			return;

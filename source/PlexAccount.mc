@@ -1,6 +1,6 @@
 using Toybox.Application;
 using Toybox.System;
-using SubMusic.Storage;
+using Plexit.Storage;
 
 module PlexAccount {
     function clientId() {
@@ -12,7 +12,7 @@ module PlexAccount {
         var settings = System.getDeviceSettings();
         id = settings.uniqueIdentifier;
         if (id == null) {
-            id = settings.partNumber + "-submusic";
+            id = settings.partNumber + "-plexit";
         }
         Application.Storage.setValue(Storage.PLEX_CLIENT_ID, id);
         return id;
@@ -21,7 +21,7 @@ module PlexAccount {
     function headers(token) {
         var values = {
             "Accept" => "application/json",
-            "X-Plex-Product" => "SubMusic",
+            "X-Plex-Product" => "Plexit",
             "X-Plex-Version" => "0.3.0",
             "X-Plex-Client-Identifier" => clientId(),
             "X-Plex-Platform" => "Garmin Connect IQ",
@@ -39,6 +39,6 @@ module PlexAccount {
         Application.Storage.setValue(Storage.PLEX_SERVER_URL, uri);
         Application.Storage.setValue(Storage.PLEX_SERVER_TOKEN, token);
         Application.Storage.setValue(Storage.PLEX_ACCOUNT_TOKEN, accountToken);
-        SubMusic.Provider.onSettingsChanged();
+        Plexit.Provider.onSettingsChanged();
     }
 }

@@ -1,4 +1,4 @@
-using SubMusic.Utils;
+using Plexit.Utils;
 
 class PlexProvider {
 
@@ -403,7 +403,7 @@ class PlexProvider {
 		}
 
         // if response too large and limit is possible
-		if ((error instanceof SubMusic.GarminSdkError)
+		if ((error instanceof Plexit.GarminSdkError)
 			&& (error.respCode() == Communications.NETWORK_RESPONSE_TOO_LARGE)
 			&& (d_limit > 1)) {
 			

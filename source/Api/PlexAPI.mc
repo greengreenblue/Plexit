@@ -1,4 +1,4 @@
-using SubMusic.Utils;
+using Plexit.Utils;
 using Toybox.Communications;
 
 class PlexAPI extends Api {
@@ -18,8 +18,8 @@ class PlexAPI extends Api {
         d_params.put("X-Plex-Device", System.getDeviceSettings().partNumber);
         d_params.put("X-Plex-Device-Name", client());
 
-		d_options[:headers].put("X-Plex-Product", "SubMusic");
-		d_options[:headers].put("X-Plex-Version", (new SubMusicVersion(null)).toString());
+		d_options[:headers].put("X-Plex-Product", "Plexit");
+		d_options[:headers].put("X-Plex-Version", (new PlexitVersion(null)).toString());
 		d_options[:headers].put("X-Plex-Client-Identifier", PlexAccount.clientId());
 		d_options[:headers].put("X-Plex-Platform", "Garmin Connect IQ");
 		d_options[:headers].put("X-Plex-Device", "Garmin Watch");
@@ -44,8 +44,8 @@ class PlexAPI extends Api {
 		};
 		
 		// construct parameters
-		params = SubMusic.Utils.merge(params, d_params);
-		options = SubMusic.Utils.merge(options, d_options);
+		params = Plexit.Utils.merge(params, d_params);
+		options = Plexit.Utils.merge(options, d_options);
 
 		Communications.makeWebRequest(url, params, options, self.method(:onScrobble));
 	}
@@ -122,7 +122,7 @@ class PlexAPI extends Api {
     	Api.setCallback(callback);
 
 		var url = url() + id;
-		params = SubMusic.Utils.merge(params, d_params);
+		params = Plexit.Utils.merge(params, d_params);
 
 		// additional options
 		var options = {
@@ -145,7 +145,7 @@ class PlexAPI extends Api {
     	Api.setCallback(callback);
 
 		var url = url() + "/music/:/transcode/universal/start.m3u8";
-		params = SubMusic.Utils.merge(params, d_params);
+		params = Plexit.Utils.merge(params, d_params);
 
 		// additional options
 		var options = {
@@ -179,7 +179,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 
 		var url = url() + "/photo/:/transcode";
-		params = SubMusic.Utils.merge(params, d_params);
+		params = Plexit.Utils.merge(params, d_params);
 		params.put("url", id);
 		params.put("width", 100);
 		params.put("height", 100);

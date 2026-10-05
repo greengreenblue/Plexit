@@ -1,4 +1,4 @@
-using SubMusic.Storage;
+using Plexit.Storage;
 
 module PlaylistStore {
     var d_store = new ObjectStore(Storage.PLAYLISTS);
