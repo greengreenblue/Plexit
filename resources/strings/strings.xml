@@ -9,6 +9,7 @@
     <string id="NoDownloadedMusic">No downloaded music</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
+	<string id="prefer_musicbrainz_artwork">Prefer MusicBrainz Artwork</string>
 
     <string id="confSync_Title">Sync settings</string>
     <string id="confSync_StartSync_label">Sync</string>
@@ -55,8 +56,9 @@
     <string id="Favorites_label">Favorites</string>
     <string id="Genres_label">Genres</string>
 	<string id="fetchingGenres">Fetching Genres...</string>
+    <string id="MixSettings_label">Mix settings</string>
     <string id="TrackLimit_label">Track limit</string>
-    <string id="SizeLimit_label">Size limit per mix</string>
+    <string id="MaximumDownloadSize_label">Maximum download size</string>
     <string id="Search_label">Search</string>
     <string id="Search_hint">Enter text with UP/DOWN</string>
     <string id="ClearSearch_label">Clear search</string>

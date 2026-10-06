@@ -1,4 +1,5 @@
 using Plexit.Utils;
+using Toybox.Application;
 using Toybox.Communications;
 using Toybox.Lang;
 
@@ -7,9 +8,7 @@ class PlexAPI extends Api {
     private var d_params = {};
     private var d_options = { :headers => { "Accept" => "application/json" } };
 	private var d_photoSourceId = null;
-	private var d_photoDirectRetry = false;
 	private var d_photoUsingPublic = false;
-	private var d_photoParams = null;
 	private var d_artworkUrl = null;
 
     function initialize(settings, progress, fallback) {
@@ -322,9 +321,11 @@ class PlexAPI extends Api {
 	function photo_transcode(callback, params, id) {
 		Api.setCallback(callback);
 		d_photoSourceId = id;
-		d_photoDirectRetry = false;
 		d_photoUsingPublic = false;
-		d_photoParams = params;
+		if (!Application.Properties.getValue("prefer_musicbrainz_artwork")) {
+			startPlexPhotoTranscode();
+			return;
+		}
 
 		var ratingKey = artworkRatingKey(id);
 		if (ratingKey == null) {
@@ -426,35 +427,31 @@ class PlexAPI extends Api {
 	function startPlexPhotoTranscode() {
 
 		var imageBaseUrl = (d_artworkUrl != null) ? d_artworkUrl : url();
-		var photoUrl = imageBaseUrl + "/photo/:/transcode";
-		var params = Plexit.Utils.merge(d_photoParams, d_params);
-		addImageClientParams(params);
-		// Plex authenticates the outer photo-transcode request and its nested
-		// source URL separately. Protected library artwork therefore needs the
-		// token inside the url parameter as well.
-		var sourceUrl = d_photoSourceId;
-		if (key() != null) {
-			sourceUrl += ((sourceUrl.find("?") == null) ? "?" : "&")
-				+ "X-Plex-Token=" + key();
-		}
-		params.put("url", sourceUrl);
-		params.put("width", 100);
-		params.put("height", 100);
-		params.put("format", "jpeg");
-		params.put("quality", 80);
-		params.put("upscale", 0);
-		params.put("minSize", 0);
+		var photoUrl = imageBaseUrl + "/photo/:/transcode"
+			+ "?url=" + encodeArtworkPath(d_photoSourceId)
+			+ "&width=99"
+			+ "&height=99"
+			+ "&format=jpg";
 
-		// makeImageRequest only accepts image conversion options. Authentication
-		// is already present in params as X-Plex-Token; :headers and
-		// :fileDownloadProgressCallback are not valid image request options.
 		var options = {
-			:maxWidth => 100,
-			:maxHeight => 100,
+			:maxWidth => 101,
+			:maxHeight => 101,
 		};
 
-		System.println("Starting Plex artwork download via " + imageBaseUrl + ": " + d_photoSourceId);
-		Communications.makeImageRequest(photoUrl, params, options, method(:onPhoto));
+		System.println("Starting Plex artwork download via: " + photoUrl);
+		Communications.makeImageRequest(photoUrl, null, options, method(:onPhoto));
+	}
+
+	function encodeArtworkPath(path) {
+		var encoded = "";
+		var remainder = path;
+		var slash = remainder.find("/");
+		while (slash != null) {
+			encoded += remainder.substring(0, slash) + "%2F";
+			remainder = remainder.substring(slash + 1, remainder.length());
+			slash = remainder.find("/");
+		}
+		return encoded + remainder;
 	}
 
 	function onPhoto(responseCode, data) {
@@ -468,41 +465,10 @@ class PlexAPI extends Api {
 				startPlexPhotoTranscode();
 				return;
 			}
-			if (!d_photoDirectRetry && (d_photoSourceId != null)) {
-				d_photoDirectRetry = true;
-				downloadArtworkDirect();
-				return;
-			}
 			d_fallback.invoke(error);
 			return;
 		}
 		d_callback.invoke(data);
-	}
-
-	function downloadArtworkDirect() {
-		var imageBaseUrl = (d_artworkUrl != null) ? d_artworkUrl : url();
-		var directUrl = imageBaseUrl + d_photoSourceId;
-		var params = {};
-		if (key() != null) {
-			params.put("X-Plex-Token", key());
-		}
-		addImageClientParams(params);
-		var options = {
-			:maxWidth => 100,
-			:maxHeight => 100,
-			:dithering => Communications.IMAGE_DITHERING_NONE,
-		};
-		System.println("Retrying artwork as direct image: " + d_photoSourceId);
-		Communications.makeImageRequest(directUrl, params, options, method(:onPhoto));
-	}
-
-	function addImageClientParams(params) {
-		// makeImageRequest has no :headers option. Plex accepts all X-Plex
-		// identity values as query parameters as an equivalent transport.
-		params.put("X-Plex-Product", "Plexit");
-		params.put("X-Plex-Client-Identifier", PlexAccount.clientId());
-		params.put("X-Plex-Platform", "iOS");
-		params.put("X-Plex-Device", "AppleTV");
 	}
 
 	// @override

@@ -1,3 +1,4 @@
 <properties>
 	<property id="skip_30s" type="boolean">true</property>
+	<property id="prefer_musicbrainz_artwork" type="boolean">true</property>
 </properties>
