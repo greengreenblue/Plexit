@@ -25,6 +25,7 @@ class PlexProvider {
 	private var d_collectionType = null;
 	private var d_sectionIds = [];
 	private var d_sectionIndex = 0;
+	private var d_dynamicBytes = 0;
     
 	enum {
 		PLEX_PING,
@@ -39,6 +40,9 @@ class PlexProvider {
 		PLEX_LIBRARY_ITEMS,
 		PLEX_LIBRARY_METADATA,
 		PLEX_LIBRARY_SONGS,
+		PLEX_DYNAMIC_METADATA,
+		PLEX_DYNAMIC_SONGS,
+		PLEX_LIBRARY_GENRES,
 	}
 
     function initialize(settings) {
@@ -157,9 +161,26 @@ class PlexProvider {
         d_id = id;
 		d_collectionType = collectionType(id);
 
-		d_action = (d_collectionType == null)
-			? PLEX_PLAYLIST : PLEX_LIBRARY_METADATA;
+		if ((d_collectionType != null)
+			&& (d_collectionType.equals("mix") || d_collectionType.equals("genre"))) {
+			d_action = PLEX_DYNAMIC_METADATA;
+		} else {
+			d_action = (d_collectionType == null)
+				? PLEX_PLAYLIST : PLEX_LIBRARY_METADATA;
+		}
 		do_();
+	}
+
+	function on_do_dynamic_metadata(response) {
+		var stored = new IPlaylist(d_id);
+		if (stored.stored()) {
+			stored.setRemote(true);
+			d_response.add(stored);
+		}
+		d_action = null;
+		var completed = d_response;
+		d_response = [];
+		d_callback.invoke(completed);
 	}
 
 	function on_do_playlist(response) {
@@ -234,6 +255,17 @@ class PlexProvider {
 		getAllCollections("artist", callback);
 	}
 
+	function getAllGenres(callback) {
+		d_callback = callback;
+		d_collectionType = "genre";
+		d_response = [];
+		d_sectionIds = [];
+		d_sectionIndex = 0;
+		d_params = {};
+		d_action = PLEX_LIBRARY_GENRES;
+		d_api.library_sections(self.method(:on_do_library_sections), d_params);
+	}
+
 	function getAllCollections(type, callback) {
 		d_callback = callback;
 		d_collectionType = type;
@@ -247,6 +279,7 @@ class PlexProvider {
 
 	function on_do_library_sections(response) {
 		var directories = response["Directory"];
+		if (directories instanceof Lang.Dictionary) { directories = [ directories ]; }
 		if (directories instanceof Lang.Array) {
 			for (var idx = 0; idx < directories.size(); ++idx) {
 				var directory = directories[idx];
@@ -264,9 +297,46 @@ class PlexProvider {
 			d_callback.invoke(completed);
 			return;
 		}
+		if (d_action == PLEX_LIBRARY_GENRES) {
+			requestGenres();
+			return;
+		}
 		d_offset = OFFSET;
 		d_action = PLEX_LIBRARY_ITEMS;
 		requestLibraryItems();
+	}
+
+	function requestGenres() {
+		d_api.library_section_genres(
+			self.method(:on_do_genres),
+			{ "type" => 10 },
+			d_sectionIds[d_sectionIndex]
+		);
+	}
+
+	function on_do_genres(response) {
+		var directories = response["Directory"];
+		if (directories instanceof Lang.Dictionary) { directories = [ directories ]; }
+		if (directories instanceof Lang.Array) {
+			for (var idx = 0; idx < directories.size(); ++idx) {
+				var genre = directories[idx];
+				d_response.add(new Playlist({
+					"id" => "genre:" + d_sectionIds[d_sectionIndex] + ":" + genre["key"],
+					"name" => genre["title"],
+					"songCount" => 0,
+					"remote" => true,
+				}));
+			}
+		}
+		d_sectionIndex += 1;
+		if (d_sectionIndex < d_sectionIds.size()) {
+			requestGenres();
+			return;
+		}
+		d_action = null;
+		var completed = d_response;
+		d_response = [];
+		d_callback.invoke(completed);
 	}
 
 	function requestLibraryItems() {
@@ -331,6 +401,8 @@ class PlexProvider {
 		if (!(id instanceof Lang.String)) { return null; }
 		if (id.find("album:") == 0) { return "album"; }
 		if (id.find("artist:") == 0) { return "artist"; }
+		if (id.find("mix:") == 0) { return "mix"; }
+		if (id.find("genre:") == 0) { return "genre"; }
 		return null;
 	}
 
@@ -357,10 +429,17 @@ class PlexProvider {
 		d_limit = MAX_LIMIT;
 		d_offset = OFFSET;
 		d_count = MAX_COUNT;
+		d_dynamicBytes = 0;
 
 		d_collectionType = collectionType(id);
-		d_action = (d_collectionType == null)
-			? PLEX_PLAYLIST_SONGS : PLEX_LIBRARY_SONGS;
+		if ((d_collectionType != null)
+			&& (d_collectionType.equals("mix") || d_collectionType.equals("genre"))) {
+			d_count = Plexit.DynamicMix.trackLimit();
+			d_action = PLEX_DYNAMIC_SONGS;
+		} else {
+			d_action = (d_collectionType == null)
+				? PLEX_PLAYLIST_SONGS : PLEX_LIBRARY_SONGS;
+		}
 		do_();
 	}
 
@@ -380,7 +459,12 @@ class PlexProvider {
 			response = [];
 		}
 
-		// append the standard song objects to the array
+		appendSongs(response, false);
+		checkDone(response);
+	}
+
+	function appendSongs(response, enforceDynamicLimit) {
+		var maxBytes = Plexit.DynamicMix.sizeLimitMb() * 1024.0 * 1024.0;
 		for (var idx = 0; idx < response.size(); ++idx) {
 			var song = response[idx];
 
@@ -388,6 +472,16 @@ class PlexProvider {
 			var time = song["duration"];
 			if (time == null) {
 				time = 0;
+			}
+			var seconds = time.toNumber() / 1000;
+			var estimatedBytes = seconds * 24000.0;
+			if (enforceDynamicLimit
+				&& (d_response.size() > 0)
+				&& ((d_dynamicBytes + estimatedBytes) > maxBytes)) {
+				return false;
+			}
+			if (enforceDynamicLimit && (d_response.size() >= d_count)) {
+				return false;
 			}
 
 			var container = null;
@@ -404,15 +498,107 @@ class PlexProvider {
 				"id" => song["ratingKey"],
 				"title" => song["title"],
 				"artist" => song["grandparentTitle"],
-				"time" => time.toNumber() / 1000,
+				"time" => seconds,
 				"mime" => containerToMime(container),
 				"media_key" => mediaKey,
 					// Track.thumb is the album cover. Track.art is a much larger
 					// artist/background image and is unsuitable for the watch player.
 					"art_id" => song["thumb"],
 			}));
+			d_dynamicBytes += estimatedBytes;
 		}
-		checkDone(response);
+		return true;
+	}
+
+	function dynamicParams() {
+		var params = { "type" => 10 };
+		if (d_collectionType.equals("genre")) {
+			var genreParts = d_id.substring(6, d_id.length());
+			var lastSeparator = genreParts.find(":");
+			params.put("genre", genreParts.substring(lastSeparator + 1, genreParts.length()));
+			params.put("sort", "titleSort");
+		} else if (d_id.equals("mix:recent-added")) {
+			params.put("sort", "addedAt:desc");
+		} else if (d_id.equals("mix:recent-played")) {
+			params.put("sort", "lastViewedAt:desc");
+			params.put("viewCount>=", 1);
+		} else if (d_id.equals("mix:most-played")) {
+			params.put("sort", "viewCount:desc");
+			params.put("viewCount>=", 1);
+		} else if (d_id.equals("mix:unplayed")) {
+			params.put("unwatched", 1);
+			params.put("sort", "addedAt:desc");
+		} else {
+			params.put("userRating>=", 8);
+			params.put("sort", "userRating:desc,titleSort");
+		}
+		params.put("X-Plex-Container-Size", d_limit);
+		params.put("X-Plex-Container-Start", d_offset);
+		return params;
+	}
+
+	function on_do_dynamic_sections(response) {
+		d_sectionIds = [];
+		if (d_collectionType.equals("genre")) {
+			var genreParts = d_id.substring(6, d_id.length());
+			var separator = genreParts.find(":");
+			d_sectionIds.add(genreParts.substring(0, separator));
+		}
+		var directories = response["Directory"];
+		if (directories instanceof Lang.Dictionary) { directories = [ directories ]; }
+		if ((d_sectionIds.size() == 0) && (directories instanceof Lang.Array)) {
+			for (var idx = 0; idx < directories.size(); ++idx) {
+				if ((directories[idx]["type"] instanceof Lang.String)
+					&& directories[idx]["type"].equals("artist")) {
+					d_sectionIds.add(directories[idx]["key"]);
+				}
+			}
+		}
+		d_sectionIndex = 0;
+		d_offset = OFFSET;
+		if (d_sectionIds.size() == 0) {
+			completeDynamicSongs();
+			return;
+		}
+		requestDynamicItems();
+	}
+
+	function requestDynamicItems() {
+		d_api.library_section_all(
+			self.method(:on_do_dynamic_items),
+			dynamicParams(),
+			d_sectionIds[d_sectionIndex]
+		);
+	}
+
+	function on_do_dynamic_items(response) {
+		var tracks = response["Metadata"];
+		if (tracks instanceof Lang.Dictionary) { tracks = [ tracks ]; }
+		if (!(tracks instanceof Lang.Array)) { tracks = []; }
+		var acceptedAll = appendSongs(tracks, true);
+		if (!acceptedAll || (d_response.size() >= d_count)) {
+			completeDynamicSongs();
+			return;
+		}
+		if (tracks.size() >= d_limit) {
+			d_offset += d_limit;
+			requestDynamicItems();
+			return;
+		}
+		d_sectionIndex += 1;
+		if (d_sectionIndex < d_sectionIds.size()) {
+			d_offset = OFFSET;
+			requestDynamicItems();
+			return;
+		}
+		completeDynamicSongs();
+	}
+
+	function completeDynamicSongs() {
+		d_action = null;
+		var completed = d_response;
+		d_response = [];
+		d_callback.invoke(completed);
 	}
 
 	/**
@@ -571,6 +757,18 @@ class PlexProvider {
 		}
 		if (d_action == PLEX_LIBRARY_ITEMS) {
 			requestLibraryItems();
+			return;
+		}
+		if (d_action == PLEX_LIBRARY_GENRES) {
+			requestGenres();
+			return;
+		}
+		if (d_action == PLEX_DYNAMIC_METADATA) {
+			d_api.library_sections(self.method(:on_do_dynamic_metadata), d_params);
+			return;
+		}
+		if (d_action == PLEX_DYNAMIC_SONGS) {
+			d_api.library_sections(self.method(:on_do_dynamic_sections), {});
 			return;
 		}
 		// if (d_action == PLEX_PODCAST) {

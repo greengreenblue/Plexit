@@ -143,6 +143,18 @@ class PlexAPI extends Api {
 		);
 	}
 
+	function library_section_genres(callback, params, sectionId) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/sections/" + sectionId + "/genre";
+		System.println("library_section_genres: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
+
 	function metadata(callback, params, id) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id;

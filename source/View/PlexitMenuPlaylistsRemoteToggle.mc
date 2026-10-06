@@ -41,8 +41,10 @@ module Plexit {
                 if ((d_collectionType != null) && d_collectionType.equals("album")
                     && (playlist.subtitle() != null)) {
                     sublabel = playlist.subtitle();
-                } else if ((d_collectionType != null) && (playlist.count() == 0)) {
-                    sublabel = d_collectionType.equals("album") ? "Album" : "Artist";
+				} else if ((d_collectionType != null) && (playlist.count() == 0)) {
+					if (d_collectionType.equals("album")) { sublabel = "Album"; }
+					else if (d_collectionType.equals("artist")) { sublabel = "Artist"; }
+					else { sublabel = "Genre"; }
                 }
                 if (!playlist.remote()) { sublabel += " - local only"; }
                 var storedPlaylist = new IPlaylist(playlist.id());
@@ -76,6 +78,8 @@ module Plexit {
                     d_provider.getAllPlaylists(method(:onGetAllCollections));
                 } else if (d_collectionType.equals("album")) {
                     d_provider.getAllAlbums(method(:onGetAllCollections));
+				} else if (d_collectionType.equals("genre")) {
+					d_provider.getAllGenres(method(:onGetAllCollections));
                 } else {
                     d_provider.getAllArtists(method(:onGetAllCollections));
                 }
@@ -228,9 +232,12 @@ module Plexit {
                     if (d_collectionType == null) {
                         return WatchUi.loadResource(Rez.Strings.fetchingPlaylists);
                     }
-                    if (d_collectionType.equals("album")) {
+					if (d_collectionType.equals("album")) {
                         return WatchUi.loadResource(Rez.Strings.fetchingAlbums);
                     }
+					if (d_collectionType.equals("genre")) {
+						return WatchUi.loadResource(Rez.Strings.fetchingGenres);
+					}
                     return WatchUi.loadResource(Rez.Strings.fetchingArtists);
                 }
                 return WatchUi.loadResource(Rez.Strings.placeholder_noRemotePlaylists);

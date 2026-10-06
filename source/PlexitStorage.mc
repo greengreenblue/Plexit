@@ -44,6 +44,9 @@ module Plexit {
 			PLEX_SERVER_TOKEN,
 			PLEX_ARTWORK_URL,
 
+			DYNAMIC_TRACK_LIMIT,
+			DYNAMIC_SIZE_LIMIT_MB,
+
 			VERSION = 200,	// version string of store
 		}
 

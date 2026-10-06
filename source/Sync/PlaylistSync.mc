@@ -70,7 +70,9 @@ class PlaylistSync extends Deferrable {
 
 		// A non-empty remote collection must not be persisted as a successful
 		// zero-song download when Plex returned an unexpected response shape.
-		if ((songs.size() == 0) && (d_iplaylist.count() > 0)) {
+		var playlistId = d_iplaylist.id();
+		var dynamicMix = (playlistId.find("mix:") == 0);
+		if (!dynamicMix && (songs.size() == 0) && (d_iplaylist.count() > 0)) {
 			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
 			return;
 		}
