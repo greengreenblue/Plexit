@@ -25,6 +25,10 @@ class ObjectStore extends Store {
 	function getValues() {
 		return Store.value().values();
 	}
+
+	function reset() {
+		Store.reset({});
+	}
 	
 	function save(item) {
 		// return false if failed save

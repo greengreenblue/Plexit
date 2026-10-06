@@ -18,6 +18,7 @@ module Plexit {
 		private var d_ids;
 		private var d_ids_total = 0;	// nr of ids in beginning
 		private var d_last = 0;			// last idx
+		private var d_lastProgress = 0;		// progress shown by the native sync UI
 
 		enum { START, SCROBBLE = START, PLAYLISTS, AUDIO, ARTWORK, END}
 		private var d_syncstage = START;	// track the stage for sync process
@@ -29,8 +30,10 @@ module Plexit {
 
 		// Starts the sync with the system
 		function onStartSync() {
+			d_syncstage = START;
+			d_lastProgress = 0;
 			// show progress
-			d_notifySyncProgress.invoke(0);
+			reportProgress(0);
 			
 			// first sync is on Scrobbles
 			doSync();
@@ -45,6 +48,37 @@ module Plexit {
 		}
 
 		function onCompleteSync() {
+			var songIds = SongStore.getIds();
+			var cachedSongs = 0;
+			for (var idx = 0; idx < songIds.size(); ++idx) {
+				var song = new ISong(songIds[idx]);
+				if (song.refId() != null) { cachedSongs += 1; }
+			}
+			System.println("Sync verification: cached=" + cachedSongs
+				+ ", songs=" + songIds.size()
+				+ ", pending=" + SongStore.getTodos().size());
+
+			var playlistIds = PlaylistStore.getIds();
+			for (var playlistIdx = 0; playlistIdx < playlistIds.size(); ++playlistIdx) {
+				var playlist = new IPlaylist(playlistIds[playlistIdx]);
+				System.println("Playlist verification: id=" + playlist.id()
+					+ ", local=" + playlist.local()
+					+ ", synced=" + playlist.synced()
+					+ ", songs=" + playlist.count());
+			}
+
+			// The native Garmin player reads the persisted playable queue. On the
+			// first sync it is empty, which leaves the default player on "No media"
+			// until the user manually selects Play All. Preserve an existing queue,
+			// but initialize an empty one from all downloaded songs.
+			var playable = new Plexit.IPlayable();
+			playable.removeRemoved();
+			if ((playable.size() == 0) && (cachedSongs > 0)) {
+				playable.loadSongIds(songIds);
+				System.println("Playback queue initialized with " + playable.size() + " song(s)");
+			}
+
+			reportProgress(100);
 			// finish sync
 			d_notifySyncComplete.invoke(null);
 			Application.Storage.setValue(Storage.LAST_SYNC, { "time" => Time.now().value(), });
@@ -71,6 +105,7 @@ module Plexit {
 				return new ScrobbleSync(progress, done, fail);
 			} else if (idx == PLAYLISTS) {
 				d_ids = PlaylistStore.getIds();
+				d_ids_total = d_ids.size();
 				var step = method(:stepPlaylist);
 				return new DeferredFor(0, d_ids.size(), step, done, fail);
 			} else if (idx == AUDIO) {
@@ -86,28 +121,51 @@ module Plexit {
 		}
 
 		function onDone() {
+			// Complete the current stage before starting the next one. Individual
+			// sync tasks report progress relative to their own stage.
+			reportStageProgress(100);
 			// go to next stage
 			d_syncstage += 1;
 			doSync();
 		}
 	
-		function onScrobbleProgress(progress) {
-			progress /= 2;
-			
-			d_notifySyncProgress.invoke(progress.toNumber());
-		}
-		
 		function stepPlaylist(idx, done, fail) {
 			d_last = idx;
 			return new PlaylistSync(d_ids[idx], method(:onPlaylistProgress), done, fail);
 		}
 		
 		function onProgress(progress) {
-			d_notifySyncProgress.invoke(progress.toNumber());
+			reportStageProgress(progress);
 		}
 		
 		function onPlaylistProgress(progress) {
-			d_notifySyncProgress.invoke(progress.toNumber());
+			if (d_ids_total == 0) {
+				reportStageProgress(100);
+				return;
+			}
+
+			// PlaylistSync reports progress for one playlist. Include the number
+			// of playlists already completed so a new playlist cannot move the
+			// native progress bar backwards.
+			var playlistProgress = (100.0 * d_last + progress) / d_ids_total.toFloat();
+			reportStageProgress(playlistProgress);
+		}
+
+		function reportStageProgress(progress) {
+			if (progress < 0) { progress = 0; }
+			if (progress > 100) { progress = 100; }
+
+			var overall = ((d_syncstage * 100.0) + progress) / END.toFloat();
+			reportProgress(overall);
+		}
+
+		function reportProgress(progress) {
+			var value = progress.toNumber();
+			if (value < d_lastProgress) { return; }
+			if (value > 100) { value = 100; }
+
+			d_lastProgress = value;
+			d_notifySyncProgress.invoke(value);
 		}
 		
 		function onError(error) {

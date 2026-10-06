@@ -52,8 +52,8 @@ class Artwork extends Storable {
         if (id() == null) {
             return null;
         }
-        return Application.Storage.getValue(id());
-    }
+		return Application.Storage.getValue(id());
+	}
 }
 
 class IArtwork extends Artwork {
@@ -93,8 +93,8 @@ class IArtwork extends Artwork {
 	}
 
 	function save() {
-        // do not save if id invalid
-        if (art_id == null) {
+	        // do not save if id invalid
+	        if (art_id() == null) {
             return false;
         }
         

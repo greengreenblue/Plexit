@@ -55,5 +55,9 @@ module Plexit {
 		function removeAll() {
 			return d_store.removeAll();
 		}
+
+		function reset() {
+			d_store.reset();
+		}
 	}
 }

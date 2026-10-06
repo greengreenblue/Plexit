@@ -77,9 +77,10 @@ class ArtworkSync extends Deferrable {
 	}
 	
     // Callback for when a song is downloaded
-	function onDownloaded(artwork) {
-		// update artwork
-		d_todo[0].setImage(artwork);
+	    function onDownloaded(artwork) {
+			// update artwork
+			d_todo[0].setImage(artwork);
+			System.println("Artwork cached successfully: " + d_todo[0].art_id());
 
 		// continue to next song
 		d_todo.removeAll(d_todo[0]);
@@ -87,7 +88,8 @@ class ArtworkSync extends Deferrable {
 		sync();
 	}
     
-    function onError(error) {
+	    function onError(error) {
+	    	System.println("Artwork skipped after error: " + error);
     	// indicate failed sync
 //   	d_playlist.setError(error); TODO
     	// d_failed.add(d_todo[0]);

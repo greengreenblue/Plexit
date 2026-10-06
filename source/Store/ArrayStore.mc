@@ -24,6 +24,10 @@ class ArrayStore extends Store {
 		return Store.value().size();
 	}
 
+	function reset() {
+		Store.reset([]);
+	}
+
 	function indexOf(item) {
 		return Store.value().indexOf(item.toStorage());
 	}

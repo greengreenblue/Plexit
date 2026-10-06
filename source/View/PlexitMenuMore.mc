@@ -1,6 +1,7 @@
 using Toybox.WatchUi;
 using Toybox.Communications;
 using Toybox.Application;
+using Toybox.Lang;
 using Toybox.Time;
 using Plexit.Storage;
 
@@ -24,10 +25,13 @@ module Plexit {
 			}
 
 			function sublabel() {
-				return getPendingSummary();
+				return getSyncStatus();
 			}
 
 			static function getSyncLabel() {
+				if (!PlexAccount.isConnected()) {
+					return WatchUi.loadResource(Rez.Strings.PlexNotConnected);
+				}
 				if (hasPendingChanges()) {
 					return WatchUi.loadResource(Rez.Strings.SyncPending_label);
 				}
@@ -35,6 +39,9 @@ module Plexit {
 			}
 
 			static function getSyncStatus() {
+				if (!PlexAccount.isConnected()) {
+					return WatchUi.loadResource(Rez.Strings.PlexSignInHint);
+				}
 				var pending = getPendingSummary();
 				if (pending != null) {
 					return pending;
@@ -43,6 +50,9 @@ module Plexit {
 			}
 
 			static function getPendingSummary() {
+				if (!PlexAccount.isConnected()) {
+					return null;
+				}
 				var songs = 0;
 				var changes = false;
 				var ids = PlaylistStore.getIds();
@@ -86,14 +96,25 @@ module Plexit {
 	        	return sublabel;
 			}
 			
-			static function onStartSync() {
+				static function onStartSync() {
+					if (!PlexAccount.isConnected()) {
+						WatchUi.pushView(new PlexLoginView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
+						return;
+					}
 				// store sync request, refer to bug https://forums.garmin.com/developer/connect-iq/i/bug-reports/bug-media-communications-syncdelegate-blocks-charging
 				Application.Storage.setValue(Storage.SYNC_REQUEST, true);
 				// var syncrequest  = Application.Storage.getValue(Storage.SYNC_REQUEST);
 				
-				// start the sync
-				Communications.startSync();
-			}
+					// The following screen belongs to Garmin, so only its initial message
+					// can be customized. Progress remains controlled by notifySyncProgress.
+					if (Communications has :startSync2) {
+						Communications.startSync2({
+							:message => WatchUi.loadResource(Rez.Strings.SyncingMusicMessage),
+						});
+					} else {
+						Communications.startSync();
+					}
+				}
 			
 		}
 	}

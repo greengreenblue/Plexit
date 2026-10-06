@@ -40,6 +40,9 @@ module Plexit {
                     // load the menuitem
                     var audio = audios[idx];
                     var meta = audio.metadata();
+					if (meta == null) {
+						continue;
+					}
                     items.add({
                         LABEL => meta.title,
                         SUBLABEL => meta.artist,

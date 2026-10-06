@@ -35,7 +35,7 @@ class PlaylistSync extends Deferrable {
 	function onGetPlaylist(response) {
 
 		// mark first out of 2 requests done
-		onProgress(1/2);
+		onProgress(50);
 		
 		if (response.size() == 0) {
 			// playlist not found on server
@@ -58,7 +58,7 @@ class PlaylistSync extends Deferrable {
 	
 	function onGetPlaylistSongs(songs) {
 		// mark 2 out of 2 requests done
-		onProgress(2/2);
+		onProgress(100);
 
 		// update the playlist with remote songs
     	d_iplaylist.update(songs);			// returns new remote songs, not used

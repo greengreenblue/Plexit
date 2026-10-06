@@ -18,4 +18,8 @@ module PlaylistStore {
     function remove(playlist) {
         return d_store.remove(playlist);
     }
+
+	function reset() {
+		d_store.reset();
+	}
 }

@@ -15,10 +15,12 @@ module Plexit {
         function getProviderSettings() {
             var serverUrl = Application.Storage.getValue(Storage.PLEX_SERVER_URL);
             var serverToken = Application.Storage.getValue(Storage.PLEX_SERVER_TOKEN);
+            var artworkUrl = Application.Storage.getValue(Storage.PLEX_ARTWORK_URL);
             return {
                 "api_url" => serverUrl,
                 "api_usr" => null,
                 "api_key" => serverToken,
+                "artwork_url" => artworkUrl,
             };
         }
 

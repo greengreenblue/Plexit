@@ -29,6 +29,7 @@ class PlexProvider {
 		PLEX_PLAYLIST,
 		PLEX_PLAYLISTS,
 		PLEX_PLAYLIST_SONGS,
+		PLEX_TRANSCODE_DECISION,
 		PLEX_STREAM,
 		PLEX_GET_ART,
 	}
@@ -234,7 +235,9 @@ class PlexProvider {
 				"time" => time.toNumber() / 1000,
 				"mime" => containerToMime(container),
 				"media_key" => mediaKey,
-				"art_id" => song["art"],
+					// Track.thumb is the album cover. Track.art is a much larger
+					// artist/background image and is unsuitable for the watch player.
+					"art_id" => song["thumb"],
 			}));
 		}
 		checkDone(response);
@@ -255,11 +258,11 @@ class PlexProvider {
 		d_directStream = isDirectMp3(mime, mediaKey);
 		if (d_directStream) {
 			d_params = { "download" => 1 };
+			d_action = PLEX_STREAM;
 		} else {
 			prepareMp3Transcode();
+			d_action = PLEX_TRANSCODE_DECISION;
 		}
-
-		d_action = PLEX_STREAM;
 		do_();
 	}
 
@@ -272,22 +275,46 @@ class PlexProvider {
 
 	function prepareMp3Transcode() {
 		d_directStream = false;
+		var sessionId = PlexAccount.clientId();
 		d_params = {
 			"path" => "/library/metadata/" + d_id,
-			"download" => 1,
-			"protocol" => "hls",
+			"session" => sessionId,
+			"X-Plex-Session-Identifier" => sessionId,
+			"protocol" => "http",
+			"hasMDE" => 1,
+			"mediaIndex" => 0,
+			"partIndex" => 0,
 			"directPlay" => 0,
-			"directStream" => 0,
-			"audioCodec" => "mp3",
+			"directStream" => 1,
+			"directStreamAudio" => 1,
 			"maxAudioBitrate" => 192,
 			"musicBitrate" => 192,
-			"X-Plex-Client-Profile-Extra" => "add-transcode-target(type=musicProfile&context=streaming&protocol=hls&container=mpegts&audioCodec=mp3)"
+			"audioBitrate" => 192,
+			"X-Plex-Client-Profile-Extra" => "add-transcode-target(type=musicProfile&context=streaming&protocol=http&container=mp3&audioCodec=mp3&replace=true)"
 		};
 	}
 
 	function on_do_stream(contentRef) {
 		d_action = null;
 		d_callback.invoke(contentRef.getId());
+	}
+
+	function on_do_transcode_decision(responseCode, body) {
+		if (responseCode == 200) {
+			d_action = PLEX_STREAM;
+			do_();
+			return;
+		}
+
+		var error = Plexit.HttpError.is(responseCode);
+		if (error == null) {
+			error = Plexit.GarminSdkError.is(responseCode);
+		}
+		if (error == null) {
+			error = new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
+		}
+		d_action = null;
+		d_fallback.invoke(error);
 	}
 
 	/**
@@ -348,6 +375,10 @@ class PlexProvider {
 			d_api.scrobble(self.method(:on_do_record_play), d_params);
 			return;
 		}
+		if (d_action == PLEX_TRANSCODE_DECISION) {
+			d_api.music_transcode_decision(self.method(:on_do_transcode_decision), d_params);
+			return;
+		}
 		if (d_action == PLEX_STREAM) {
 			if (d_directStream) {
 				d_api.stream(self.method(:on_do_stream), d_params, d_mediaKey, Media.ENCODING_MP3);
@@ -398,6 +429,7 @@ class PlexProvider {
 		// direct Part URL can fail. Transparently retry it as MP3/192 kbps once.
 		if ((d_action == PLEX_STREAM) && d_directStream) {
 			prepareMp3Transcode();
+			d_action = PLEX_TRANSCODE_DECISION;
 			do_();
 			return;
 		}
@@ -413,6 +445,7 @@ class PlexProvider {
 		}
 
 		d_action = null;
+		System.println("Plex request failed: " + error);
 		d_fallback.invoke(error);
     }
 

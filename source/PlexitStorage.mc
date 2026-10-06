@@ -1,5 +1,6 @@
 using Toybox.Media;
 using Toybox.Application;
+using Toybox.System;
 
 // Keys for Storage
 module Storage_Deprecated {
@@ -41,6 +42,7 @@ module Plexit {
 			PLEX_SERVER_NAME,
 			PLEX_SERVER_URL,
 			PLEX_SERVER_TOKEN,
+			PLEX_ARTWORK_URL,
 
 			VERSION = 200,	// version string of store
 		}
@@ -114,9 +116,13 @@ module Plexit {
 			for (var idx = 0; idx < refIds.size(); ++idx) {
 				var refId = refIds[idx];
 				if (refId != null) {
-					// remove from media cache
-					var contentRef = new Media.ContentRef(refId, Media.CONTENT_TYPE_AUDIO);
-					Media.deleteCachedItem(contentRef);
+						// remove from media cache
+						var contentRef = new Media.ContentRef(refId, Media.CONTENT_TYPE_AUDIO);
+						try {
+							Media.deleteCachedItem(contentRef);
+						} catch (error) {
+							System.println("Deprecated cached audio already unavailable: " + error);
+						}
 				}
 			}
 		}

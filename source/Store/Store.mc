@@ -25,6 +25,12 @@ class Store {
 		d_value = value;
 	}
 
+	// Replace the in-memory mirror without writing it back. Used after
+	// Application.Storage.clearValues(), where the persisted data is already gone.
+	function reset(value) {
+		d_value = value;
+	}
+
 	function update() {
 		var success = true;
 		try {

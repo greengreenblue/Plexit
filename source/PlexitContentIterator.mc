@@ -1,11 +1,13 @@
 using Toybox.Media;
 using Toybox.Math;
+using Toybox.System;
 using Plexit;
 
 class PlexitContentIterator extends Media.ContentIterator {
 
 	private var d_songcount;
 	private var d_playable;
+	private var d_repeatMode = Media.REPEAT_MODE_OFF;
 
     function initialize() {
         ContentIterator.initialize();
@@ -22,8 +24,9 @@ class PlexitContentIterator extends Media.ContentIterator {
     }
 
     // Get the current media content object.
-    function get() {
-    	if (d_playable.songidx() >= d_songcount)
+	    function get() {
+		if ((d_songcount == 0) || (d_playable.songidx() < 0)
+				|| (d_playable.songidx() >= d_songcount))
     	{
     		return null;
     	}
@@ -62,6 +65,11 @@ class PlexitContentIterator extends Media.ContentIterator {
     function next() {
     	if ((d_playable.songidx() + 1) >= d_songcount)
     	{
+			if (d_songcount > 0) {
+				d_playable.setIdx(0);
+				d_playable.save();
+				return getObj(0);
+			}
     		return null;
     	}
 		d_playable.incSongIdx();
@@ -72,6 +80,9 @@ class PlexitContentIterator extends Media.ContentIterator {
     function peekNext() {
     	if ((d_playable.songidx() + 1) >= d_songcount)
     	{
+			if (d_songcount > 0) {
+				return getObj(0);
+			}
     		return null;
     	}
     	return getObj(d_playable.songidx() + 1);
@@ -81,6 +92,9 @@ class PlexitContentIterator extends Media.ContentIterator {
     function peekPrevious() {
     	if (d_playable.songidx() == 0)
     	{
+			if (d_songcount > 0) {
+				return getObj(d_songcount - 1);
+			}
     		return null;
     	}
     	return getObj(d_playable.songidx() - 1);
@@ -90,6 +104,11 @@ class PlexitContentIterator extends Media.ContentIterator {
     function previous() {
     	if (d_playable.songidx() == 0)
     	{
+			if (d_songcount > 0) {
+				d_playable.setIdx(d_songcount - 1);
+				d_playable.save();
+				return getObj(d_songcount - 1);
+			}
     		return null;
     	}
 		d_playable.decSongIdx();
@@ -105,16 +124,48 @@ class PlexitContentIterator extends Media.ContentIterator {
 		d_playable.shuffleIdcs(!d_playable.shuffle());
     }
 
+	function repeatMode() {
+		return d_repeatMode;
+	}
+
+	function toggleRepeat() {
+		if (d_repeatMode == Media.REPEAT_MODE_OFF) {
+			d_repeatMode = Media.REPEAT_MODE_ONE;
+		} else if (d_repeatMode == Media.REPEAT_MODE_ONE) {
+			d_repeatMode = Media.REPEAT_MODE_ALL;
+		} else {
+			d_repeatMode = Media.REPEAT_MODE_OFF;
+		}
+	}
+
 	// Retrieve the cached object from Media
 	function getObj(idx) {
+		if ((idx == null) || (idx < 0) || (idx >= d_songcount)) {
+			return null;
+		}
 
 		// retrieve content reference
 		var audio = d_playable.getAudio(idx);
+		if (!(audio instanceof Plexit.Audio) || (audio.refId() == null)) {
+			return null;
+		}
 		var contentRef = new Media.ContentRef(audio.refId(), Media.CONTENT_TYPE_AUDIO);
 		
 		// retrieve metadata
-		var content = Media.getCachedContentObj(contentRef);
+		var content = null;
+		try {
+			content = Media.getCachedContentObj(contentRef);
+		} catch (error) {
+			System.println("Cached playback item unavailable: " + error);
+			return null;
+		}
+		if (content == null) {
+			return null;
+		}
 		var metadata = content.getMetadata();
+		if (metadata == null) {
+			return null;
+		}
 
 		// add stored metadata if not given in file (Plex does not provide metadata in file)
 		var has_title = (metadata.title != null) && (metadata.title instanceof Lang.String) && (!metadata.title.equals(""));

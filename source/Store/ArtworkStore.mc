@@ -46,6 +46,11 @@ module ArtworkStore {
 		return ret;
 	}
 
+	function reset() {
+		d_artworks.reset();
+		d_delete.reset();
+	}
+
     // these functions should be used only internally by IArtwork class
 	function save(artwork) {
 		// update delete tracking

@@ -31,14 +31,30 @@ module Plexit {
 			static function onPlayAll() {
 				var iplayable = new Plexit.IPlayable();
 				iplayable.loadSongIds(SongStore.getIds());
+				if (iplayable.size() == 0) {
+					showNoDownloadedMusic();
+					return;
+				}
 				Media.startPlayback(null);
 			}
 
 			static function onShuffleAll() {
 				var iplayable = new Plexit.IPlayable();
 				iplayable.loadSongIds(SongStore.getIds());
+				if (iplayable.size() == 0) {
+					showNoDownloadedMusic();
+					return;
+				}
 				iplayable.shuffleIdcs(true);
 				Media.startPlayback(null);
+			}
+
+			static function showNoDownloadedMusic() {
+				WatchUi.pushView(
+					new TextView(WatchUi.loadResource(Rez.Strings.NoDownloadedMusic)),
+					new WatchUi.BehaviorDelegate(),
+					WatchUi.SLIDE_IMMEDIATE
+				);
 			}
 		}
 	}

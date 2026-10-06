@@ -93,6 +93,16 @@ module Plexit {
 				
 				// remove all metadata
 				Application.Storage.clearValues();
+
+				// Store modules mirror Application.Storage in RAM. Clearing only the
+				// persistent values leaves stale playlists/song counts visible until a
+				// full process restart (which the simulator does not always perform).
+				SongStore.reset();
+				PlaylistStore.reset();
+				ArtworkStore.reset();
+				Plexit.ScrobbleStore.reset();
+				Plexit.PlayableStore.reset();
+				Plexit.Provider.onSettingsChanged();
 				
 				// check storage to set the storage version number
 				Plexit.Storage.check();

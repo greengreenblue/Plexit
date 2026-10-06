@@ -43,6 +43,10 @@ module Plexit {
                 // start playback with playlist
                 var iplayable = new Plexit.IPlayable();
                 iplayable.loadPlaylist(d_id, null);
+				if (iplayable.size() == 0) {
+					Menu.Playback.showNoDownloadedMusic();
+					return;
+				}
                 Media.startPlayback(null);
             }
 
@@ -50,6 +54,10 @@ module Plexit {
                 // start playback with playlist in shuffle mode
                 var iplayable = new Plexit.IPlayable();
                 iplayable.loadPlaylist(d_id, null);
+				if (iplayable.size() == 0) {
+					Menu.Playback.showNoDownloadedMusic();
+					return;
+				}
                 iplayable.shuffleIdcs(true);
                 Media.startPlayback(null);
             }
@@ -69,6 +77,10 @@ module Plexit {
                 // start playback with playlist and song combination
                 var iplayable = new Plexit.IPlayable();
                 iplayable.loadPlaylist(d_id, songid);
+				if (iplayable.size() == 0) {
+					Menu.Playback.showNoDownloadedMusic();
+					return;
+				}
                 Media.startPlayback(null);
             }
 

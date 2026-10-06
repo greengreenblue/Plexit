@@ -42,6 +42,9 @@ module Plexit {
                     var id = d_ids[idx];
                     var isong = new ISong(id);
                     var metadata = isong.metadata();
+					if (metadata == null) {
+						continue;
+					}
 
                     // add stored metadata if not given in file (Plex does not provide metadata in file)
                     var has_title = (metadata.title != null) && (metadata.title instanceof Lang.String) && (!metadata.title.equals(""));

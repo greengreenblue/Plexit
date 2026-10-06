@@ -18,6 +18,7 @@ class Api {
     private var d_url;      // the base url for the api
     private var d_usr;      // the user 
     private var d_key;      // the key used to login
+	private var d_lastProgressBytes = 0;
 
 
     function initialize(url_add) {
@@ -109,23 +110,38 @@ class Api {
         return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
-    function checkImageResponse(responseCode, data) {
+	function checkImageResponse(responseCode, data) {
         var error = checkResponse(responseCode, data);
         if (error) { return error; }
 
         // check type of received object
-        if (data instanceof WatchUi.BitmapResource) { return null; }
+		// makeImageRequest returns BitmapResource on older devices and
+		// BitmapReference on API 4+ devices. Avoid a static reference to the newer
+		// class so this PRG remains loadable on API 3 devices.
+		if (data != null) { return null; }
         return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
 	function onProgress(totalBytesTransferred, fileSize) {
-		// if total fileSize is null, progress = 0
-		var progress = 0;
-		if (fileSize) {
-			progress = 100 * (totalBytesTransferred / fileSize.toFloat());
+		if (fileSize != null && fileSize > 0) {
+			var progress = 100 * (totalBytesTransferred / fileSize.toFloat());
+			d_progress.invoke(progress);
+			return;
 		}
-		// callback the progress update
-		d_progress.invoke(progress);
+
+		// Transcoded/chunked responses do not always include Content-Length.
+		// Reporting zero for every callback made the native UI look frozen and
+		// could move it backwards. Keep the item-level progress unchanged, but
+		// log byte movement so a real stalled request is distinguishable.
+		if ((d_lastProgressBytes == 0)
+			|| ((totalBytesTransferred - d_lastProgressBytes) >= 262144)) {
+			System.println("Audio download: " + totalBytesTransferred + " bytes (total unknown)");
+			d_lastProgressBytes = totalBytesTransferred;
+		}
+	}
+
+	function beginDownloadProgress() {
+		d_lastProgressBytes = 0;
 	}
 
     function setCallback(callback) {

@@ -5,6 +5,8 @@
     <string id="ServerKey">Plex token</string>
     <string id="PlexSignIn">Plex sign in</string>
     <string id="PlexNotConnected">Not connected</string>
+    <string id="PlexSignInHint">Sign in under Settings</string>
+    <string id="NoDownloadedMusic">No downloaded music</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
 
@@ -25,6 +27,7 @@
     <string id="SyncNow_label">Sync now</string>
     <string id="SyncPending_label">Sync pending</string>
     <string id="SyncChangesWaiting">Changes waiting</string>
+    <string id="SyncingMusicMessage">Downloading and converting music...</string>
     <string id="ShuffleAll_sublabel">All downloaded songs</string>
     <string id="PlexPlayback_label">Plex &amp; playback</string>
     <string id="StorageInfo_label">Info</string>

@@ -57,6 +57,10 @@ module Plexit {
             }
 
             function load() {
+				if (!PlexAccount.isConnected()) {
+					d_loading = false;
+					return MenuBase.load([]);
+				}
 
                 // if already loading, do nothing, wait for response
                 if (d_loading) {
@@ -120,6 +124,9 @@ module Plexit {
             }
 
             function placeholder() {
+				if (!PlexAccount.isConnected()) {
+					return WatchUi.loadResource(Rez.Strings.PlexNotConnected);
+				}
                 if (d_loading) {
                     return WatchUi.loadResource(Rez.Strings.fetchingPlaylists);
                 }

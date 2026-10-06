@@ -4,6 +4,7 @@ class AudioSync extends Deferrable {
 	private var d_audio = null;		// front of the todos
 	
 	private var d_failed = [];		// array of all failed
+	private var d_lastError = null;	// last download error reported by Garmin/Plex
 	
 	private var f_progress; 		// callback on progress
 	
@@ -43,6 +44,10 @@ class AudioSync extends Deferrable {
 	function sync() {
 		// if songs all finished, complete this task
 		if (d_pendingAudio.size() == 0) {
+			if (d_failed.size() > 0) {
+				System.println("Audio sync failed for " + d_failed.size() + " song(s): " + d_lastError);
+				return Deferrable.cancel(d_lastError);
+			}
 	   		return Deferrable.complete();				// set complete
 		}
 
@@ -78,8 +83,21 @@ class AudioSync extends Deferrable {
 	
     // Callback for when a song is downloaded
 	function onDownloaded(refId) {
+		if (refId == null) {
+			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
+			return;
+		}
+
 		// update refId
-		d_pendingAudio[0].setRefId(refId);
+		var downloadedId = d_pendingAudio[0].id();
+		if (!d_pendingAudio[0].setRefId(refId)) {
+			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
+			return;
+		}
+		var storedSong = new ISong(downloadedId);
+		System.println("Audio cached successfully: " + downloadedId
+			+ ", refId=" + storedSong.refId()
+			+ ", pending=" + SongStore.getTodos().size());
 
 		// continue to next song
 		d_pendingAudio.removeAll(d_pendingAudio[0]);
@@ -97,6 +115,7 @@ class AudioSync extends Deferrable {
 		// indicate failed sync
 //   	d_playlist.setError(error); TODO
 		d_failed.add(d_pendingAudio[0]);
+		d_lastError = error;
 		// record the cause of failure
 //		d_pendingAudio[0].setError(error);				TODO
 		

@@ -3,6 +3,11 @@ using Toybox.System;
 using Plexit.Storage;
 
 module PlexAccount {
+    function isConnected() {
+        return (Application.Storage.getValue(Storage.PLEX_SERVER_URL) != null)
+            && (Application.Storage.getValue(Storage.PLEX_SERVER_TOKEN) != null);
+    }
+
     function clientId() {
         var id = Application.Storage.getValue(Storage.PLEX_CLIENT_ID);
         if (id != null) {
@@ -34,10 +39,11 @@ module PlexAccount {
         return values;
     }
 
-    function saveServer(name, uri, token, accountToken) {
+    function saveServer(name, uri, token, accountToken, artworkUri) {
         Application.Storage.setValue(Storage.PLEX_SERVER_NAME, name);
         Application.Storage.setValue(Storage.PLEX_SERVER_URL, uri);
         Application.Storage.setValue(Storage.PLEX_SERVER_TOKEN, token);
+        Application.Storage.setValue(Storage.PLEX_ARTWORK_URL, artworkUri);
         Application.Storage.setValue(Storage.PLEX_ACCOUNT_TOKEN, accountToken);
         Plexit.Provider.onSettingsChanged();
     }

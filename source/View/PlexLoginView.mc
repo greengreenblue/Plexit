@@ -159,8 +159,11 @@ class PlexLoginView extends TextView {
             selected["name"],
             selected["uri"],
             selected["token"],
-            accountToken
+            accountToken,
+            selected["artworkUri"]
         );
+        System.println("Plex artwork connection: "
+            + ((selected["artworkUri"] != null) ? selected["artworkUri"] : "none; using local fallback"));
         setText("Connected to Plex:\n" + selected["name"]);
     }
 
@@ -194,11 +197,30 @@ class PlexLoginView extends TextView {
                         "name" => resource["name"],
                         "uri" => connection["uri"],
                         "token" => resource["accessToken"],
+                        "artworkUri" => findArtworkConnection(connections),
                     };
                 }
             }
         }
         return best;
+    }
+
+    function findArtworkConnection(connections) {
+        var relay = null;
+        for (var index = 0; index < connections.size(); index += 1) {
+            var connection = connections[index];
+            if (!(connection instanceof Lang.Dictionary)
+                || (connection["uri"] == null)
+                || (connection["protocol"] != "https")
+                || (connection["local"] == true)) {
+                continue;
+            }
+            if (connection["relay"] != true) {
+                return connection["uri"];
+            }
+            relay = connection["uri"];
+        }
+        return relay;
     }
 
     function providesServer(provides) {

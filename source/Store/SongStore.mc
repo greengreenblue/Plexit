@@ -50,6 +50,12 @@ module SongStore {
 		return ret;
 	}
 
+	function reset() {
+		d_songs.reset();
+		d_delete.reset();
+		d_songTodos.reset();
+	}
+
     // these functions should be used only internally by ISong class
 	function save(song) {
 		// update delete tracking

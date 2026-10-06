@@ -18,5 +18,9 @@ module Plexit {
             d_playableStore.setValue(null);
             return d_playableStore.update();
         }
+
+		function reset() {
+			d_playableStore.reset({});
+		}
     }
 }

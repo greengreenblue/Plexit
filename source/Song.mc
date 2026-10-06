@@ -1,5 +1,6 @@
 using Toybox.Media;
 using Toybox.Application;
+using Toybox.System;
 using Toybox.Test;
 
 // 
@@ -145,7 +146,14 @@ class ISong extends Song {
 		if (refId() != null) {
 			// remove from media cache
 			var contentRef = new Media.ContentRef(refId(), Media.CONTENT_TYPE_AUDIO);
-			Media.deleteCachedItem(contentRef);
+			try {
+				Media.deleteCachedItem(contentRef);
+			} catch (error) {
+				// The native cache may already have removed the file (reset,
+				// interrupted sync, simulator restart). Deletion is idempotent:
+				// stale Plexit metadata must still be cleared below.
+				System.println("Cached audio already unavailable during delete: " + error);
+			}
 		}
 
 		// store new refId
@@ -196,6 +204,7 @@ class ISong extends Song {
 		if (d_artwork != null) {
 			d_artwork.decRefCount();
 		}
+		d_artwork = null;
 
 		// if new artwork, load it
 		if (art_id() != null) {
@@ -205,7 +214,6 @@ class ISong extends Song {
 			d_artwork.incRefCount();
 		}
 
-		d_artwork = null;
 		return changed;
 	}
 

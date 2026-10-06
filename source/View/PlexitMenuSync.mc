@@ -1,4 +1,7 @@
 using Toybox.WatchUi;
+using Toybox.Application;
+using Toybox.Communications;
+using Toybox.Lang;
 using Toybox.Time;
 
 using Plexit.Menu;
@@ -37,12 +40,22 @@ module Plexit {
 			}
 			
 			function onStartSync() {
+				if (!PlexAccount.isConnected()) {
+					WatchUi.pushView(new PlexLoginView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
+					return;
+				}
 				// store sync request, refer to bug https://forums.garmin.com/developer/connect-iq/i/bug-reports/bug-media-communications-syncdelegate-blocks-charging
 				Application.Storage.setValue(Storage.SYNC_REQUEST, true);
 				// var syncrequest  = Application.Storage.getValue(Storage.SYNC_REQUEST);
 				
 				// start the sync
-				Communications.startSync();
+				if (Communications has :startSync2) {
+					Communications.startSync2({
+						:message => WatchUi.loadResource(Rez.Strings.SyncingMusicMessage),
+					});
+				} else {
+					Communications.startSync();
+				}
 			}
 
 			// 
