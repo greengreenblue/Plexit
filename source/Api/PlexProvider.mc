@@ -30,6 +30,7 @@ class PlexProvider {
 	enum {
 		PLEX_PING,
 		PLEX_RECORD_PLAY,
+		PLEX_RATE,
 		PLEX_PLAYLIST,
 		PLEX_PLAYLISTS,
 		PLEX_PLAYLIST_SONGS,
@@ -106,6 +107,23 @@ class PlexProvider {
 	function on_do_record_play(response) {
 		d_action = null;
 		d_callback.invoke(response); // expected empty response
+	}
+
+	function rate(id, value, ratedAt, callback) {
+		d_callback = callback;
+		d_params = {
+			"key" => id,
+			"identifier" => "com.plexapp.plugins.library",
+			"rating" => value,
+			"ratedAt" => ratedAt,
+		};
+		d_action = PLEX_RATE;
+		do_();
+	}
+
+	function on_do_rate(response) {
+		d_action = null;
+		d_callback.invoke(response);
 	}
 	
 	/**
@@ -733,6 +751,10 @@ class PlexProvider {
 		}
 		if (d_action == PLEX_RECORD_PLAY) {
 			d_api.scrobble(self.method(:on_do_record_play), d_params);
+			return;
+		}
+		if (d_action == PLEX_RATE) {
+			d_api.rate(self.method(:on_do_rate), d_params);
 			return;
 		}
 		if (d_action == PLEX_TRANSCODE_DECISION) {

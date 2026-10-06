@@ -20,7 +20,7 @@ module Plexit {
 		private var d_last = 0;			// last idx
 		private var d_lastProgress = 0;		// progress shown by the native sync UI
 
-		enum { START, SCROBBLE = START, PLAYLISTS, AUDIO, ARTWORK, END}
+		enum { START, RATINGS = START, SCROBBLE, PLAYLISTS, AUDIO, ARTWORK, END}
 		private var d_syncstage = START;	// track the stage for sync process
 
 		function initialize(notifySyncProgress, notifySyncComplete) {
@@ -41,7 +41,8 @@ module Plexit {
 			// show progress
 			reportProgress(0);
 			
-			// first sync is on Scrobbles
+			// Push offline ratings and playback history before refreshing dynamic
+			// playlists such as Favorites and Recently Played.
 			doSync();
 		}
 
@@ -107,7 +108,9 @@ module Plexit {
 			var progress = method(:onProgress);
 			var done = method(:onDone);
 			var fail = method(:onError);
-			if (idx == SCROBBLE) {
+			if (idx == RATINGS) {
+				return new RatingSync(progress, done, fail);
+			} else if (idx == SCROBBLE) {
 				return new ScrobbleSync(progress, done, fail);
 			} else if (idx == PLAYLISTS) {
 				d_ids = PlaylistStore.getIds();
@@ -174,9 +177,12 @@ module Plexit {
 			// UI jump to 50% before the first song download began.
 			var stageStart = 0;
 			var stageWeight = 0;
-			if (d_syncstage == SCROBBLE) {
+			if (d_syncstage == RATINGS) {
 				stageStart = 0;
-				stageWeight = 2;
+				stageWeight = 1;
+			} else if (d_syncstage == SCROBBLE) {
+				stageStart = 1;
+				stageWeight = 1;
 			} else if (d_syncstage == PLAYLISTS) {
 				stageStart = 2;
 				stageWeight = 8;

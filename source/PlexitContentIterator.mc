@@ -46,6 +46,7 @@ class PlexitContentIterator extends Media.ContentIterator {
             
             PLAYBACK_CONTROL_SHUFFLE,
             PLAYBACK_CONTROL_REPEAT,
+            PLAYBACK_CONTROL_RATING,
         ];
 		// add skip forward buttons if enabled
 		if (Application.Properties.getValue("skip_30s")) {

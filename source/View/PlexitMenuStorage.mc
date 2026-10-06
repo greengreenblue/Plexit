@@ -101,6 +101,7 @@ module Plexit {
 				PlaylistStore.reset();
 				ArtworkStore.reset();
 				Plexit.ScrobbleStore.reset();
+				Plexit.RatingStore.reset();
 				Plexit.PlayableStore.reset();
 				Plexit.Provider.onSettingsChanged();
 				

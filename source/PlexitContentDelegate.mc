@@ -2,6 +2,7 @@ using Toybox.Media;
 using Toybox.System;
 using Plexit;
 using Plexit.ScrobbleStore;
+using Plexit.RatingStore;
 
 // This class handles events from the system's media
 // player. getContentIterator() returns an iterator
@@ -63,10 +64,33 @@ class PlexitContentDelegate extends Media.ContentDelegate {
 
     // Respond to a thumbs-up action
     function onThumbsUp(contentRefId) {
+        queueRating(contentRefId, 10);
     }
 
     // Respond to a thumbs-down action
     function onThumbsDown(contentRefId) {
+        queueRating(contentRefId, 0);
+    }
+
+    function queueRating(contentRefId, value) {
+        try {
+            var audio = findAudioByRefId(contentRefId);
+            if (!(audio instanceof Plexit.Audio)) {
+                System.println("Rating ignored: no matching local song");
+                return;
+            }
+            RatingStore.reload();
+            var saved = RatingStore.add(new Plexit.Rating({
+                "id" => audio.id(),
+                "value" => value,
+            }));
+            System.println("Rating queued: song=" + audio.id()
+                + ", value=" + value + ", saved=" + saved);
+        } catch (error) {
+            // Rating is optional. Never allow a stale native ContentRef callback
+            // to terminate playback.
+            System.println("Ignoring rating callback error: " + error);
+        }
     }
 
     // Respond to a command to turn shuffle on or off

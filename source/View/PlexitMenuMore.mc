@@ -56,6 +56,8 @@ module Plexit {
 				if (!PlexAccount.isConnected()) {
 					return null;
 				}
+				RatingStore.reload();
+				var pendingRatings = RatingStore.size();
 				// A child browse menu can persist a selection from a different
 				// native view context. Always read the latest persisted selection.
 				PlaylistStore.reload();
@@ -90,6 +92,10 @@ module Plexit {
 				}
 				if (changes || (SongStore.getDeletes().size() > 0)) {
 					return WatchUi.loadResource(Rez.Strings.SyncChangesWaiting);
+				}
+				if (pendingRatings > 0) {
+					return pendingRatings + ((pendingRatings == 1)
+						? " rating waiting" : " ratings waiting");
 				}
 				return null;
 			}

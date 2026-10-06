@@ -46,6 +46,7 @@ module Plexit {
 
 			DYNAMIC_TRACK_LIMIT,
 			DYNAMIC_SIZE_LIMIT_MB,
+			RATINGS_PENDING,
 
 			VERSION = 200,	// version string of store
 		}

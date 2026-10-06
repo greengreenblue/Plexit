@@ -52,6 +52,35 @@ class PlexAPI extends Api {
 		Communications.makeWebRequest(url, params, options, self.method(:onScrobble));
 	}
 
+	function rate(callback, params) {
+		Api.setCallback(callback);
+
+		// PMS documents these as query parameters even for PUT. Garmin otherwise
+		// serializes PUT parameters into the request body, which older PMS builds
+		// do not consistently parse for this legacy endpoint.
+		var url = url() + "/:/rate"
+			+ "?key=" + params.get("key")
+			+ "&identifier=com.plexapp.plugins.library"
+			+ "&rating=" + params.get("rating")
+			+ "&ratedAt=" + params.get("ratedAt");
+		var options = {
+			:method => Communications.HTTP_REQUEST_METHOD_PUT,
+			:headers => d_options[:headers],
+			:responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_TEXT_PLAIN,
+		};
+		System.println("Submitting Plex rating for track " + params.get("key"));
+		Communications.makeWebRequest(url, null, options, self.method(:onRate));
+	}
+
+	function onRate(responseCode, data) {
+		var error = Api.checkResponse(responseCode, data);
+		if (error) {
+			d_fallback.invoke(error);
+			return;
+		}
+		d_callback.invoke(data);
+	}
+
 	function onScrobble(responseCode, data) {
 		var error = Api.checkResponse(responseCode, data);
 		if (error) {
