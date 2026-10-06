@@ -23,6 +23,8 @@
     <string id="confSync_MoreInfo_RemoveAll_sublabel">Reset application storage</string>
     
     <string id="Donate_label">Donate</string>
+    <string id="Donate_title">Support Plexit</string>
+    <string id="Donate_scan">Scan with your phone</string>
     <string id="AddMusic_label">Add music</string>
     <string id="SyncNow_label">Sync now</string>
     <string id="SyncPending_label">Sync pending</string>
