@@ -118,6 +118,66 @@ class PlexAPI extends Api {
         params = Utils.merge(d_params, params);
         Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
     }
+
+	function library_sections(callback, params) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/sections";
+		System.println("library_sections: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
+
+	function library_section_all(callback, params, sectionId) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/sections/" + sectionId + "/all";
+		System.println("library_section_all: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
+
+	function metadata(callback, params, id) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/metadata/" + id;
+		System.println("metadata: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
+
+	function metadata_children(callback, params, id) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/metadata/" + id + "/children";
+		System.println("metadata_children: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
+
+	function metadata_all_leaves(callback, params, id) {
+		Api.setCallback(callback);
+		var requestUrl = url() + "/library/metadata/" + id + "/allLeaves";
+		System.println("metadata_all_leaves: " + requestUrl);
+		Communications.makeWebRequest(
+			requestUrl,
+			Utils.merge(d_params, params),
+			d_options,
+			self.method(:onResponse)
+		);
+	}
     
     /**
      * stream

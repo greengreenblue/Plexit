@@ -117,8 +117,9 @@ module Plexit {
 	
 		class MenuView extends WatchUi.Menu2 {
 		
-			private var d_menu;
-			private var d_created = false; // menu not created yet
+		private var d_menu;
+		private var d_created = false; // menu not created yet
+		private var d_itemCount = 0;
 	
 			/* menu should have the following members
 			 * var title 				- containing the title of the menu
@@ -139,17 +140,35 @@ module Plexit {
 		    function updateMenu() {
 				// set title
 				setTitle(d_menu.title());
+				// Rebuild the menu so filtered result sets can shrink as well as grow.
+				for (var removeIdx = d_itemCount - 1; removeIdx >= 0; removeIdx -= 1) {
+					deleteItem(removeIdx);
+				}
+				d_itemCount = 0;
 				// load the items
 				var idx = 0;
 				var item = d_menu.getItem(idx);
 				while (item != null) {
-					updateItem(item, idx);
+					addItem(item);
+					d_itemCount += 1;
 
 					// load next item
 					idx += 1;
 					item = d_menu.getItem(idx);
 				}
-			}
+
+				// A dynamic menu can become empty while a child screen is open
+				// (for example, deleting the final item in Downloads). The initial
+				// MenuLoader handles empty menus, but an existing Menu2 otherwise
+				// renders as a completely black screen after it is refreshed.
+				if (d_itemCount == 0) {
+					WatchUi.switchToView(
+						new TextView(d_menu.placeholder()),
+						null,
+						WatchUi.SLIDE_IMMEDIATE
+					);
+				}
+		    }
 			
 			// create the menu by adding the items
 			function createMenu() {
@@ -161,6 +180,7 @@ module Plexit {
 				var item = d_menu.getItem(idx);
 				while (item != null) {
 					addItem(item);
+					d_itemCount += 1;
 
 					// load next item
 					idx += 1;

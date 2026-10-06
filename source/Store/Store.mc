@@ -31,6 +31,16 @@ class Store {
 		d_value = value;
 	}
 
+	// Refresh the in-memory mirror after returning from another native media
+	// view/runtime context. Audio provider screens may keep an older module
+	// instance alive even though Application.Storage already contains a newer
+	// value written by the screen that was just popped.
+	function reload(fallback) {
+		var stored = Application.Storage.getValue(d_key);
+		d_value = (stored == null) ? fallback : stored;
+		return d_value;
+	}
+
 	function update() {
 		var success = true;
 		try {

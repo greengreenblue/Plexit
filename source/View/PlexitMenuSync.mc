@@ -20,12 +20,25 @@ module Plexit {
 			function load() {
 				return MenuBase.load([
 					{
-						LABEL => Menu.AddMusic.getSyncLabel(),
-						SUBLABEL => Menu.AddMusic.getSyncStatus(),
+						// Resolve these whenever the menu is shown again. Browse and the
+						// native Garmin sync screen both change persisted sync state while
+						// this parent menu remains alive on the view stack.
+						LABEL => method(:getCurrentSyncLabel),
+						SUBLABEL => method(:getCurrentSyncStatus),
 						METHOD => method(:onStartSync),
 					},
-					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label), null),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Albums_label), "album"),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Artists_label), "artist"),
 				]);
+			}
+
+			function getCurrentSyncLabel() {
+				return Menu.AddMusic.getSyncLabel();
+			}
+
+			function getCurrentSyncStatus() {
+				return Menu.AddMusic.getSyncStatus();
 			}
 			
 			function getLastSyncString() {

@@ -20,7 +20,9 @@ module Plexit {
 						SUBLABEL => method(:getSyncStatus),
 						METHOD => method(:onStartSync),
 					},
-					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label)),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label), null),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Albums_label), "album"),
+					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Artists_label), "artist"),
 				]);
 			}
 
@@ -53,13 +55,19 @@ module Plexit {
 				if (!PlexAccount.isConnected()) {
 					return null;
 				}
+				// A child browse menu can persist a selection from a different
+				// native view context. Always read the latest persisted selection.
+				PlaylistStore.reload();
+				PlaylistStore.debugState("pending-menu");
 				var songs = 0;
 				var changes = false;
+				var selections = 0;
 				var ids = PlaylistStore.getIds();
 				for (var idx = 0; idx < ids.size(); ++idx) {
 					var playlist = new IPlaylist(ids[idx]);
 					if (playlist.local() && !playlist.synced()) {
 						songs += playlist.count();
+						selections += 1;
 						changes = true;
 					} else if (!playlist.local() && playlist.linked()) {
 						changes = true;
@@ -74,6 +82,10 @@ module Plexit {
 				}
 				if (songs > 0) {
 					return songs + " songs waiting";
+				}
+				if (selections > 0) {
+					return selections + ((selections == 1)
+						? " selection waiting" : " selections waiting");
 				}
 				if (changes || (SongStore.getDeletes().size() > 0)) {
 					return WatchUi.loadResource(Rez.Strings.SyncChangesWaiting);

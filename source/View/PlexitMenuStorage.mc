@@ -130,15 +130,31 @@ module Plexit {
 			}
 
 			function load() {
-				var items = [];
+				// Menu entries are generated dynamically in getItem(). MenuView calls
+				// it again whenever the Downloads screen is shown, so a deleted album
+				// disappears immediately instead of surviving as a cached 0-song row.
+				return MenuBase.load([]);
+			}
+
+			function getItem(itemIndex) {
+				var localIndex = 0;
 				var ids = PlaylistStore.getIds();
 				for (var idx = 0; idx < ids.size(); ++idx) {
 					var playlist = new IPlaylist(ids[idx]);
 					if (playlist.local()) {
-						items.add(new Menu.DownloadSettings(playlist));
+						if (localIndex == itemIndex) {
+							var settings = new Menu.DownloadSettings(playlist);
+							return new WatchUi.MenuItem(
+								settings.label(),
+								settings.sublabel(),
+								settings.get(METHOD),
+								null
+							);
+						}
+						localIndex += 1;
 					}
 				}
-				return MenuBase.load(items);
+				return null;
 			}
 		}
 
@@ -152,7 +168,26 @@ module Plexit {
 
 			function sublabel() {
 				var playlist = new IPlaylist(d_downloadId);
-				return playlist.count() + " songs";
+				return downloadSummary(playlist);
+			}
+
+			function downloadSummary(playlist) {
+				var downloaded = 0;
+				var songIds = playlist.songs();
+				for (var idx = 0; idx < songIds.size(); ++idx) {
+					var song = new ISong(songIds[idx]);
+					if (song.refId() != null) {
+						downloaded += 1;
+					}
+				}
+
+				// Garmin exposes total cache usage but not the byte size of an
+				// individual ContentRef. Use the authoritative collection duration;
+				// old/long single-track downloads can contain stale per-song duration
+				// metadata. Plexit requests up to 192 kbps MP3, so this is an estimate.
+				var megabytes = (playlist.time() * 24000.0) / (1024.0 * 1024.0);
+				var songsLabel = (downloaded == 1) ? " song" : " songs";
+				return downloaded + songsLabel + " / ~" + megabytes.format("%.1f") + " MB";
 			}
 
 			function load() {
@@ -160,7 +195,7 @@ module Plexit {
 				return MenuBase.load([
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.StorageInfo_label),
-						SUBLABEL => playlist.count() + " songs",
+						SUBLABEL => downloadSummary(playlist),
 						METHOD => method(:onInfo),
 					},
 					{
@@ -174,8 +209,8 @@ module Plexit {
 			function onInfo() {
 				var playlist = new IPlaylist(d_downloadId);
 				var mins = (playlist.time() / 60).toNumber();
-				var message = playlist.name() + "\n\n" + playlist.count()
-					+ " songs\n" + mins + " minutes";
+				var message = playlist.name() + "\n\n" + downloadSummary(playlist)
+					+ "\n" + mins + " minutes";
 				WatchUi.pushView(new TextView(message), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 			}
 

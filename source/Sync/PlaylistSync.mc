@@ -38,6 +38,14 @@ class PlaylistSync extends Deferrable {
 		onProgress(50);
 		
 		if (response.size() == 0) {
+			// A synthetic library selection is known to exist because it was
+			// selected from Plex Browse. Never turn a malformed/unsupported
+			// metadata response into a successful empty album or artist.
+			var id = d_iplaylist.id();
+			if ((id.find("album:") == 0) || (id.find("artist:") == 0)) {
+				onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
+				return;
+			}
 			// playlist not found on server
 			d_iplaylist.setRemote(false);
 		} else {
@@ -59,6 +67,13 @@ class PlaylistSync extends Deferrable {
 	function onGetPlaylistSongs(songs) {
 		// mark 2 out of 2 requests done
 		onProgress(100);
+
+		// A non-empty remote collection must not be persisted as a successful
+		// zero-song download when Plex returned an unexpected response shape.
+		if ((songs.size() == 0) && (d_iplaylist.count() > 0)) {
+			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
+			return;
+		}
 
 		// update the playlist with remote songs
     	d_iplaylist.update(songs);			// returns new remote songs, not used

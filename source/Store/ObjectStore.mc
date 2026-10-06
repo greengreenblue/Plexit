@@ -15,7 +15,25 @@ class ObjectStore extends Store {
 		if (id == null)  {
 			return null;
 		}
-		return items.get(id);
+		var item = items.get(id);
+		if (item != null) {
+			return item;
+		}
+
+		// Persisted dictionaries can recreate String keys as different runtime
+		// objects between native audio-provider view contexts. Fall back to the
+		// canonical ID stored inside each value instead of relying solely on the
+		// Dictionary key lookup.
+		var values = items.values();
+		for (var idx = 0; idx < values.size(); ++idx) {
+			var value = values[idx];
+			if ((value instanceof Toybox.Lang.Dictionary)
+				&& (value["id"] != null)
+				&& value["id"].toString().equals(id.toString())) {
+				return value;
+			}
+		}
+		return null;
 	}
 
 	function getIds() {
@@ -28,6 +46,10 @@ class ObjectStore extends Store {
 
 	function reset() {
 		Store.reset({});
+	}
+
+	function reload() {
+		Store.reload({});
 	}
 	
 	function save(item) {
@@ -49,7 +71,25 @@ class ObjectStore extends Store {
 			return true;
 		}
 
-		Store.value().remove(id);
+		var items = Store.value();
+		var storageKey = id;
+		if (items.get(storageKey) == null) {
+			// Storage can reconstruct String dictionary keys as distinct runtime
+			// objects. Resolve the actual key through the canonical id embedded in
+			// the stored value, just like get() does.
+			var keys = items.keys();
+			for (var idx = 0; idx < keys.size(); ++idx) {
+				var candidate = items.get(keys[idx]);
+				if ((candidate instanceof Toybox.Lang.Dictionary)
+					&& (candidate["id"] != null)
+					&& candidate["id"].toString().equals(id.toString())) {
+					storageKey = keys[idx];
+					break;
+				}
+			}
+		}
+
+		items.remove(storageKey);
 		return Store.update();
 	}
 }

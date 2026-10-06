@@ -45,6 +45,13 @@
     <string id="Settings_label">Settings</string>
 
     <string id="Playlists_label">Playlists</string>
+    <string id="Albums_label">Albums</string>
+    <string id="Artists_label">Artists</string>
+    <string id="Search_label">Search</string>
+    <string id="Search_hint">Enter text with UP/DOWN</string>
+    <string id="ClearSearch_label">Clear search</string>
+    <string id="PreviousResults_label">Previous results</string>
+    <string id="ShowMore_label">Show more</string>
     <string id="Songs_label">Songs</string>
     
     <string id="confSync_PlaylistDetail_label">Playlist Detail</string>
@@ -65,6 +72,8 @@
     <string id="placeholder_noRemoteSongs">No Remote Songs</string>
     <string id="fetchingSongs">Fetching Songs...</string>
     <string id="fetchingPlaylists">Fetching Playlists...</string>
+    <string id="fetchingAlbums">Fetching Albums...</string>
+    <string id="fetchingArtists">Fetching Artists...</string>
     <string id="playbackMenuTitle">Playlists</string>
 
     <string id="Menu_PlaylistSongs_title">Songs</string>

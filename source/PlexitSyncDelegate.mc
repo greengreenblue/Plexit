@@ -30,6 +30,12 @@ module Plexit {
 
 		// Starts the sync with the system
 		function onStartSync() {
+			// Garmin can keep the sync delegate in a separate long-lived runtime
+			// context. Offline selections made in the configuration views are
+			// already persisted, but this context may still hold the PlaylistStore
+			// snapshot from app startup. Refresh before d_ids is constructed.
+			PlaylistStore.reload();
+			PlaylistStore.debugState("sync-start");
 			d_syncstage = START;
 			d_lastProgress = 0;
 			// show progress
@@ -106,6 +112,13 @@ module Plexit {
 			} else if (idx == PLAYLISTS) {
 				d_ids = PlaylistStore.getIds();
 				d_ids_total = d_ids.size();
+				System.println("Sync queue loaded with " + d_ids_total + " selection(s)");
+				for (var queueIdx = 0; queueIdx < d_ids.size(); ++queueIdx) {
+					var queued = new IPlaylist(d_ids[queueIdx]);
+					System.println("Sync queue item: id=" + queued.id()
+						+ ", local=" + queued.local()
+						+ ", synced=" + queued.synced());
+				}
 				var step = method(:stepPlaylist);
 				return new DeferredFor(0, d_ids.size(), step, done, fail);
 			} else if (idx == AUDIO) {
@@ -155,7 +168,29 @@ module Plexit {
 			if (progress < 0) { progress = 0; }
 			if (progress > 100) { progress = 100; }
 
-			var overall = ((d_syncstage * 100.0) + progress) / END.toFloat();
+			// The phases do not represent equal amounts of work. Scrobbling and
+			// resolving collection metadata are normally quick, while transcoding
+			// and downloading audio dominates the sync. Equal 25% buckets made the
+			// UI jump to 50% before the first song download began.
+			var stageStart = 0;
+			var stageWeight = 0;
+			if (d_syncstage == SCROBBLE) {
+				stageStart = 0;
+				stageWeight = 2;
+			} else if (d_syncstage == PLAYLISTS) {
+				stageStart = 2;
+				stageWeight = 8;
+			} else if (d_syncstage == AUDIO) {
+				stageStart = 10;
+				stageWeight = 80;
+			} else if (d_syncstage == ARTWORK) {
+				stageStart = 90;
+				stageWeight = 10;
+			} else {
+				stageStart = 100;
+			}
+
+			var overall = stageStart + ((progress * stageWeight) / 100.0);
 			reportProgress(overall);
 		}
 

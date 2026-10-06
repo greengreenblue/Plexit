@@ -6,6 +6,7 @@ class Playlist {
 	// required external playlist properties
 	hidden var d_id;
 	hidden var d_name = "default";
+	hidden var d_subtitle = null;
 	hidden var d_songCount = 0;
 	
 	// optional external playlist properties
@@ -29,6 +30,9 @@ class Playlist {
 	function fromStorage(storage) {		
 		if (storage["name"] != null) {
 			d_name = storage["name"];
+		}
+		if (storage["subtitle"] != null) {
+			d_subtitle = storage["subtitle"];
 		}
 		if (storage["songCount"] != null) {
 			d_songCount = storage["songCount"];
@@ -57,6 +61,7 @@ class Playlist {
 		return {
 			"id" => d_id,
 			"name" => d_name,
+			"subtitle" => d_subtitle,
 			"songCount" => d_songCount,
 			
 			"songs" => d_songs,
@@ -76,6 +81,10 @@ class Playlist {
 	
 	function name() {
 		return d_name;
+	}
+
+	function subtitle() {
+		return d_subtitle;
 	}
 	
 	function count() {
@@ -226,6 +235,17 @@ class IPlaylist extends Playlist {
 		return true;
 	}
 
+	function setSubtitle(subtitle) {
+		if (d_subtitle == subtitle) {
+			return false;
+		}
+		d_subtitle = subtitle;
+		if (d_stored) {
+			save();
+		}
+		return true;
+	}
+
 	function setCount(count) {
 		// nothing to do if not changed
 		if (d_songCount == count) {
@@ -277,6 +297,7 @@ class IPlaylist extends Playlist {
 
 		// update the variables
 		var changed = setName(playlist.name());
+		changed |= setSubtitle(playlist.subtitle());
 		changed |= setCount(playlist.count());
 		changed |= setRemote(playlist.remote());
 		if (changed) {
@@ -357,6 +378,9 @@ class IPlaylist extends Playlist {
 
 		// order of songs should be copied from server
 		d_songs = songs_ord;
+		// Some Plex album responses omit leafCount. The synchronized song list is
+		// authoritative and prevents a downloaded one-track album showing as 0.
+		setCount(d_songs.size());
 
 		save();
 		return songs_new;
