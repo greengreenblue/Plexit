@@ -50,7 +50,7 @@ module Plexit {
 		function onStopSync() {
 			Communications.cancelAllRequests();
 
-			var errorMessage = "Sync stopped";
+			var errorMessage = WatchUi.loadResource(Rez.Strings.SyncStopped);
 			d_notifySyncComplete.invoke(errorMessage);
 		}
 

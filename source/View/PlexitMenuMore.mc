@@ -85,18 +85,16 @@ module Plexit {
 					songs = todoSongs;
 				}
 				if (songs > 0) {
-					return songs + " songs waiting";
+					return Plexit.I18n.songsWaiting(songs);
 				}
 				if (selections > 0) {
-					return selections + ((selections == 1)
-						? " selection waiting" : " selections waiting");
+					return Plexit.I18n.selectionsWaiting(selections);
 				}
 				if (changes || (SongStore.getDeletes().size() > 0)) {
 					return WatchUi.loadResource(Rez.Strings.SyncChangesWaiting);
 				}
 				if (pendingRatings > 0) {
-					return pendingRatings + ((pendingRatings == 1)
-						? " rating waiting" : " ratings waiting");
+					return Plexit.I18n.ratingsWaiting(pendingRatings);
 				}
 				return null;
 			}

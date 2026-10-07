@@ -95,7 +95,7 @@ module Plexit {
             }
 
             function playlist_to_item(playlist) {
-                var sublabel = playlist.count().toString() + " songs";
+                var sublabel = Plexit.I18n.songs(playlist.count());
                 if (((d_collectionType != null) && d_collectionType.equals("album")
                     || (usesServerPages() && !d_search.equals("")))
                     && (playlist.subtitle() != null)) {
@@ -104,15 +104,15 @@ module Plexit {
 					&& (playlist.subtitle() != null)) {
 					sublabel = playlist.subtitle();
 				} else if ((d_collectionType != null) && (playlist.count() == 0)) {
-					if (d_collectionType.equals("album")) { sublabel = "Album"; }
-					else if (d_collectionType.equals("artist")) { sublabel = "Artist"; }
-					else { sublabel = "Genre"; }
+					if (d_collectionType.equals("album")) { sublabel = WatchUi.loadResource(Rez.Strings.Album_label); }
+					else if (d_collectionType.equals("artist")) { sublabel = WatchUi.loadResource(Rez.Strings.Artist_label); }
+					else { sublabel = WatchUi.loadResource(Rez.Strings.Genre_label); }
                 }
                 if (usesServerPages() && !d_search.equals("")
                     && (playlist.id().find("artist:") == 0)) {
-                    sublabel = "Browse albums";
+                    sublabel = WatchUi.loadResource(Rez.Strings.BrowseAlbums_label);
                 }
-                if (!playlist.remote()) { sublabel += " - local only"; }
+                if (!playlist.remote()) { sublabel += WatchUi.loadResource(Rez.Strings.LocalOnly_suffix); }
                 var storedPlaylist = new IPlaylist(playlist.id());
                 var enabled = storedPlaylist.stored()
                     ? storedPlaylist.local() : playlist.local();
@@ -253,7 +253,7 @@ module Plexit {
                 if ((usesServerPages() && (d_nextCursor != null)) || (matched > (d_visibleStart + PAGE_SIZE))) {
                     menuItems.add({
                         LABEL => WatchUi.loadResource(Rez.Strings.ShowMore_label),
-                        SUBLABEL => usesServerPages() ? null : (matched - d_visibleStart - PAGE_SIZE) + " remaining",
+                        SUBLABEL => usesServerPages() ? null : Plexit.I18n.text(Rez.Strings.RemainingCount, [matched - d_visibleStart - PAGE_SIZE]),
                         METHOD => method(:onShowMore),
                     });
                 }

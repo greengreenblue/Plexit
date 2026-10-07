@@ -65,9 +65,9 @@ module Plexit {
             function sublabel() {
                 var iplaylist = new IPlaylist(d_id);
                 var mins = (iplaylist.time() / 60).toNumber().toString();
-                var sublabel = mins + " mins";
+                var sublabel = Plexit.I18n.text(Rez.Strings.MinutesCount, [mins]);
                 if (!iplaylist.synced()) {
-                    sublabel += " - needs sync";
+                    sublabel += WatchUi.loadResource(Rez.Strings.NeedsSync_suffix);
                 }
                 return sublabel;
             }

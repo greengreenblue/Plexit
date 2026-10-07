@@ -1,6 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
 <strings>
     <string id="AppName">Plexit</string>
-    
     <string id="ServerAddress">Server Address</string>
     <string id="ServerKey">Plex token</string>
     <string id="PlexSignIn">Plex sign in</string>
@@ -9,20 +9,17 @@
     <string id="NoDownloadedMusic">No downloaded music</string>
     <string id="skip_30s">Enable Skip</string>
     <string id="skip_30s_sublabel">Show 30s skip buttons</string>
-	<string id="prefer_musicbrainz_artwork">Prefer MusicBrainz Artwork</string>
-
+    <string id="prefer_musicbrainz_artwork">Prefer MusicBrainz Artwork</string>
     <string id="confSync_Title">Sync settings</string>
     <string id="confSync_StartSync_label">Sync</string>
     <string id="confSync_Playlists_title">Choose lists</string>
     <string id="confSync_Playlists_label">Select Playlists</string>
     <string id="confSync_SelectPlaylists_label">Select Playlists</string>
     <string id="confSync_ManagePlaylists_label">Manage Playlists</string>
-    
     <string id="confSync_MoreInfo_label">More Info</string>
     <string id="confSync_MoreInfo_title">More Info</string>
     <string id="confSync_MoreInfo_RemoveAll_label">Remove Data</string>
     <string id="confSync_MoreInfo_RemoveAll_sublabel">Reset application storage</string>
-    
     <string id="Donate_label">Donate</string>
     <string id="Donate_title">Support Plexit</string>
     <string id="Donate_scan">Scan with your phone</string>
@@ -43,12 +40,10 @@
     <string id="AppSettings_label">App Settings</string>
     <string id="Storage_label">Storage</string>
     <string id="Version_label">Version</string>
-    <string id="Settings_label">Settings</string>
-
     <string id="Playlists_label">Playlists</string>
     <string id="Albums_label">Albums</string>
     <string id="Artists_label">Artists</string>
-	<string id="Collections_label">Collections</string>
+    <string id="Collections_label">Collections</string>
     <string id="Mixes_label">Mixes</string>
     <string id="RecentlyAdded_label">Recently Added</string>
     <string id="RecentlyPlayed_label">Recently Played</string>
@@ -56,7 +51,7 @@
     <string id="Unplayed_label">Unplayed</string>
     <string id="Favorites_label">Favorites</string>
     <string id="Genres_label">Genres</string>
-	<string id="fetchingGenres">Fetching Genres...</string>
+    <string id="fetchingGenres">Fetching Genres...</string>
     <string id="MixSettings_label">Mix settings</string>
     <string id="TrackLimit_label">Track limit</string>
     <string id="MaximumDownloadSize_label">Maximum download size</string>
@@ -66,19 +61,15 @@
     <string id="PreviousResults_label">Previous results</string>
     <string id="ShowMore_label">Show more</string>
     <string id="Songs_label">Songs</string>
-    
     <string id="confSync_PlaylistDetail_label">Playlist Detail</string>
     <string id="confSync_Test_start">Starting test...</string>
-    
     <string id="configurePlaybackMessage">Configure\nPlayback</string>
-    
     <string id="confPlayback_Title">Play</string>
     <string id="confPlayback_PlayAll_label">Play All</string>
     <string id="confPlayback_SelectPlaylist_label">Playlists</string>
     <string id="confPlayback_SelectRadiostation_label">Radiostations</string>
     <string id="confPlayback_SelectSong_label">Songs</string>
     <string id="confPlayback_More_label">More...</string>
-    
     <string id="placeholder_noMenuItems">Nothing to show</string>
     <string id="placeholder_loading">Loading..</string>
     <string id="placeholder_noRemotePlaylists">No Remote Playlists</string>
@@ -87,14 +78,64 @@
     <string id="fetchingPlaylists">Fetching Playlists...</string>
     <string id="fetchingAlbums">Fetching Albums...</string>
     <string id="fetchingArtists">Fetching Artists...</string>
-	<string id="fetchingCollections">Fetching Collections...</string>
+    <string id="fetchingCollections">Fetching Collections...</string>
     <string id="playbackMenuTitle">Playlists</string>
-
     <string id="Menu_PlaylistSongs_title">Songs</string>
     <string id="Menu_PlayNow_label">Play Now</string>
     <string id="Menu_PlayShuffle_label">Shuffle</string>
     <string id="Menu_Songs_label">Songs</string>
-    
     <string id="Memory_label">Memory</string>
     <string id="Cache_label">Media cache</string>
+    <string id="Album_label">Album</string>
+    <string id="Artist_label">Artist</string>
+    <string id="Genre_label">Genre</string>
+    <string id="BrowseAlbums_label">Browse albums</string>
+    <string id="LocalOnly_suffix"> - local only</string>
+    <string id="MakeOffline_label">Make available offline</string>
+    <string id="LocalSynced_label">Local - synced</string>
+    <string id="LocalNeedsSync_label">Local - needs sync</string>
+    <string id="NeedsSync_suffix"> - needs sync</string>
+    <string id="MinutesUnit">min</string>
+    <string id="MinutesCount">$1$ min</string>
+    <string id="BytesUnit">B</string>
+    <string id="Downloaded_label">Downloaded</string>
+    <string id="Free_label">Free</string>
+    <string id="DeleteAllConfirmation">Are you sure you want to delete all application data?</string>
+    <string id="DeleteDownloadConfirmation">Delete downloaded "$1$"?</string>
+    <string id="RemainingCount">$1$ remaining</string>
+    <string id="MixSummary">$1$ / $2$ MB max</string>
+    <string id="ArtistCollection_label">Artist collection</string>
+    <string id="AlbumCollection_label">Album collection</string>
+    <string id="MusicCollection_label">Music collection</string>
+    <string id="ConnectingPlex">Connecting to Plex...</string>
+    <string id="PlexLoginFailed">Plex login failed</string>
+    <string id="InvalidPlexResponse">Invalid Plex response</string>
+    <string id="PlexLinkInstructions">Open plex.tv/link\nand enter:\n\n$1$</string>
+    <string id="PlexLoginExpired">Plex login expired.\nGo back and try again.</string>
+    <string id="PlexLoginCheckFailed">Plex login check failed</string>
+    <string id="FindingPlexServer">Signed in.\nFinding Plex server...</string>
+    <string id="ServerDiscoveryFailed">Server discovery failed</string>
+    <string id="NoPlexServers">No Plex servers found</string>
+    <string id="NoReachablePlexServer">No reachable Plex server</string>
+    <string id="ConnectedPlex">Connected to Plex:\n$1$</string>
+    <string id="Error_label">Error</string>
+    <string id="ErrorCode">Error $1$</string>
+    <string id="UnknownError">Unknown</string>
+    <string id="HttpBadRequest">Bad request</string>
+    <string id="HttpUnauthorized">Unauthorized</string>
+    <string id="HttpForbidden">Forbidden</string>
+    <string id="HttpNotFound">Not found</string>
+    <string id="SyncStopped">Sync stopped</string>
+    <string id="SongCount_one">$1$ song</string>
+    <string id="SongCount_few">$1$ songs</string>
+    <string id="SongCount_many">$1$ songs</string>
+    <string id="SongsWaiting_one">$1$ song waiting</string>
+    <string id="SongsWaiting_few">$1$ songs waiting</string>
+    <string id="SongsWaiting_many">$1$ songs waiting</string>
+    <string id="SelectionsWaiting_one">$1$ selection waiting</string>
+    <string id="SelectionsWaiting_few">$1$ selections waiting</string>
+    <string id="SelectionsWaiting_many">$1$ selections waiting</string>
+    <string id="RatingsWaiting_one">$1$ rating waiting</string>
+    <string id="RatingsWaiting_few">$1$ ratings waiting</string>
+    <string id="RatingsWaiting_many">$1$ ratings waiting</string>
 </strings>

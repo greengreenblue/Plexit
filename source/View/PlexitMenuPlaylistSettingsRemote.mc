@@ -18,7 +18,7 @@ module Plexit {
             function load() {
                 return MenuBase.load([
                     {
-                        LABEL => "Make available offline",
+                        LABEL => WatchUi.loadResource(Rez.Strings.MakeOffline_label),
                         SUBLABEL => null,
                         METHOD => "offline",
                         OPTION => method(:isOffline),
@@ -38,14 +38,14 @@ module Plexit {
             function sublabel() {
                 var iplaylist = new IPlaylist(d_id);
                 if (iplaylist.local() && iplaylist.synced()) {
-                    return "Local - synced";
+                    return WatchUi.loadResource(Rez.Strings.LocalSynced_label);
                 }
                 if (iplaylist.local()) {
-                    return "Local - needs sync";
+                    return WatchUi.loadResource(Rez.Strings.LocalNeedsSync_label);
                 }
 
                 // not synced or local? use remote playlist object
-                return d_playlist.count().toString() + " songs";
+                return Plexit.I18n.songs(d_playlist.count());
             }
 
             function onOfflineToggle(item) {

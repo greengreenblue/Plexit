@@ -47,10 +47,10 @@ module Plexit {
 				}
 
 				var free = cache.capacity - cache.size;
-				var message = "Downloaded\n" + formatBytes(cache.size)
-					+ "\n\nFree\n" + formatBytes(free)
-					+ "\n\nSongs  " + songCount
-					+ "\nPlaylists  " + playlistCount;
+				var message = WatchUi.loadResource(Rez.Strings.Downloaded_label) + "\n" + formatBytes(cache.size)
+					+ "\n\n" + WatchUi.loadResource(Rez.Strings.Free_label) + "\n" + formatBytes(free)
+					+ "\n\n" + WatchUi.loadResource(Rez.Strings.Songs_label) + "  " + songCount
+					+ "\n" + WatchUi.loadResource(Rez.Strings.Playlists_label) + "  " + playlistCount;
 				WatchUi.pushView(new TextView(message), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 			}
 
@@ -69,7 +69,7 @@ module Plexit {
 			}
 			
 			static function onRemoveAll() {
-				var msg = "Are you sure you want to delete all Application data?";
+				var msg = WatchUi.loadResource(Rez.Strings.DeleteAllConfirmation);
 				WatchUi.pushView(new WatchUi.Confirmation(msg), new PlexitConfirmationDelegate(self.method(:removeAll)), WatchUi.SLIDE_IMMEDIATE);
 			}
 			
@@ -114,10 +114,10 @@ module Plexit {
 
 			static function formatBytes(bytes as Lang.Integer) as Lang.String {
 				if (bytes == 0) {
-					return "0 Bytes";
+					return "0 " + WatchUi.loadResource(Rez.Strings.BytesUnit);
 				}
 				var k = 1024;
-				var sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+				var sizes = [WatchUi.loadResource(Rez.Strings.BytesUnit), "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 				var in = Math.floor(Math.log(bytes, 10) / Math.log(k, 10));
 				var flt = (bytes / Math.pow(k, in));
 				return flt.format("%.1f") + " " + sizes[in.toNumber()];
@@ -187,8 +187,7 @@ module Plexit {
 				// old/long single-track downloads can contain stale per-song duration
 				// metadata. Plexit requests up to 192 kbps MP3, so this is an estimate.
 				var megabytes = (playlist.time() * 24000.0) / (1024.0 * 1024.0);
-				var songsLabel = (downloaded == 1) ? " song" : " songs";
-				return downloaded + songsLabel + " / ~" + megabytes.format("%.1f") + " MB";
+				return Plexit.I18n.songs(downloaded) + " / ~" + megabytes.format("%.1f") + " MB";
 			}
 
 			function load() {
@@ -211,13 +210,13 @@ module Plexit {
 				var playlist = new IPlaylist(d_downloadId);
 				var mins = (playlist.time() / 60).toNumber();
 				var message = playlist.name() + "\n\n" + downloadSummary(playlist)
-					+ "\n" + mins + " minutes";
+					+ "\n" + Plexit.I18n.text(Rez.Strings.MinutesCount, [mins]);
 				WatchUi.pushView(new TextView(message), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
 			}
 
 			function onDelete() {
 				var playlist = new IPlaylist(d_downloadId);
-				var message = "Delete downloaded \"" + playlist.name() + "\"?";
+				var message = Plexit.I18n.text(Rez.Strings.DeleteDownloadConfirmation, [playlist.name()]);
 				WatchUi.pushView(
 					new WatchUi.Confirmation(message),
 					new PlexitConfirmationDelegate(method(:deleteDownload)),

@@ -1,3 +1,4 @@
+using Toybox.WatchUi;
 using Toybox.Communications;
 
 module Plexit {
@@ -26,17 +27,17 @@ module Plexit {
 		}
 		
 		function shortString() {
-			return s_name + " " + Error.typeToString(d_type);
+			return WatchUi.loadResource(Rez.Strings.Error_label) + " " + Error.typeToString(d_type);
 	    }
 	    
 	    function toString() {
-	    	return s_name + " " + Error.typeToString(d_type);
+			return WatchUi.loadResource(Rez.Strings.Error_label) + " " + Error.typeToString(d_type);
 	    }
 
 		static function typeToString(type) {
 			var string = stringmap.get(type);
 			if (string == null) {
-				string = "Unknown";
+				string = WatchUi.loadResource(Rez.Strings.UnknownError);
 			}
 			return string;
 		}
@@ -94,7 +95,7 @@ module Plexit {
 	    static function typeToString(type) {
 			var string = stringmap.get(type);
 			if (string == null) {
-				string = "Unknown";
+				string = WatchUi.loadResource(Rez.Strings.UnknownError);
 			}
 			return string;
 	    }
@@ -111,10 +112,10 @@ module Plexit {
 
 		// map errors to string representation
 		static private var stringmap = {
-			BAD_REQUEST => "Bad Request",
-			UNAUTHORIZED => "Unauthorized",
-			FORBIDDEN => "Forbidden",
-			NOT_FOUND => "Not Found",
+			BAD_REQUEST => Rez.Strings.HttpBadRequest,
+			UNAUTHORIZED => Rez.Strings.HttpUnauthorized,
+			FORBIDDEN => Rez.Strings.HttpForbidden,
+			NOT_FOUND => Rez.Strings.HttpNotFound,
 		};
 
 		private var d_type;
@@ -152,9 +153,9 @@ module Plexit {
 		static function typeToString(type) {
 			var string = stringmap.get(type);
 			if (string == null) {
-				string = "Unknown";
+				return WatchUi.loadResource(Rez.Strings.UnknownError);
 			}
-			return string;
+			return WatchUi.loadResource(string);
 		}
 	}
 	
@@ -227,7 +228,7 @@ module Plexit {
 	    static function respCodeToString(responseCode) {
 			var string = stringmap.get(responseCode);
 			if (string == null) {
-				string = "Unknown";
+				string = WatchUi.loadResource(Rez.Strings.UnknownError);
 			}
 			return string;
 	    }

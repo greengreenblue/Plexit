@@ -18,7 +18,7 @@ module Plexit {
         }
 
         function summary() {
-            return trackLimit() + " songs / " + sizeLimitMb() + " MB max";
+            return Plexit.I18n.text(Rez.Strings.MixSummary, [Plexit.I18n.songs(trackLimit()), sizeLimitMb()]);
         }
 
         function name(id) {
@@ -122,7 +122,7 @@ module Plexit {
                 MenuBase.initialize(WatchUi.loadResource(Rez.Strings.TrackLimit_label), false);
             }
 
-            function sublabel() { return DynamicMix.trackLimit() + " songs"; }
+            function sublabel() { return Plexit.I18n.songs(DynamicMix.trackLimit()); }
 
             function load() {
                 var items = [];
@@ -130,7 +130,7 @@ module Plexit {
                 for (var idx = 0; idx < d_values.size(); ++idx) {
                     var value = d_values[idx];
                     items.add({
-                        LABEL => value + " songs",
+                        LABEL => Plexit.I18n.songs(value),
                         SUBLABEL => null,
                         METHOD => value,
                         OPTION => (value == current),

@@ -102,6 +102,8 @@
         <iq:languages>
             <iq:language>eng</iq:language>
             <iq:language>slo</iq:language>
+            <iq:language>ces</iq:language>
+            <iq:language>deu</iq:language>
         </iq:languages>
         <iq:barrels/>
     </iq:application>

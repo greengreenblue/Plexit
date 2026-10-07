@@ -478,9 +478,9 @@ class PlexProvider {
 			var subtype = item["subtype"];
 			if (subtype instanceof Lang.String) {
 				subtitle = subtype.equals("artist")
-					? "Artist collection" : "Album collection";
+					? WatchUi.loadResource(Rez.Strings.ArtistCollection_label) : WatchUi.loadResource(Rez.Strings.AlbumCollection_label);
 			} else {
-				subtitle = "Music collection";
+				subtitle = WatchUi.loadResource(Rez.Strings.MusicCollection_label);
 			}
 		}
 		return new Playlist({

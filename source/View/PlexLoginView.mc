@@ -13,7 +13,7 @@ class PlexLoginView extends TextView {
     private var d_pollCount = 0;
 
     function initialize() {
-        TextView.initialize("Connecting to Plex...");
+        TextView.initialize(WatchUi.loadResource(Rez.Strings.ConnectingPlex));
     }
 
     function onShow() {
@@ -45,19 +45,19 @@ class PlexLoginView extends TextView {
 
     function onPinCreated(responseCode, data) {
         if ((responseCode != 200) && (responseCode != 201)) {
-            showError("Plex login failed", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.PlexLoginFailed), responseCode);
             return;
         }
         if (!(data instanceof Lang.Dictionary)
             || (data["id"] == null)
             || (data["code"] == null)) {
-            showError("Invalid Plex response", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.InvalidPlexResponse), responseCode);
             return;
         }
 
         d_pinId = data["id"];
         d_code = data["code"];
-        setText("Open plex.tv/link\nand enter:\n\n" + d_code);
+        setText(Plexit.I18n.text(Rez.Strings.PlexLinkInstructions, [d_code]));
 
         if (System.getDeviceSettings().phoneConnected) {
             Communications.openWebPage(
@@ -78,7 +78,7 @@ class PlexLoginView extends TextView {
         d_pollCount += 1;
         if (d_pollCount > 100) {
             stopPolling();
-            setText("Plex login expired.\nGo back and try again.");
+            setText(WatchUi.loadResource(Rez.Strings.PlexLoginExpired));
             return;
         }
 
@@ -98,11 +98,11 @@ class PlexLoginView extends TextView {
     function onPinPolled(responseCode, data) {
         d_polling = false;
         if (responseCode != 200) {
-            showError("Plex login check failed", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.PlexLoginCheckFailed), responseCode);
             return;
         }
         if (!(data instanceof Lang.Dictionary)) {
-            showError("Invalid Plex response", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.InvalidPlexResponse), responseCode);
             return;
         }
 
@@ -112,7 +112,7 @@ class PlexLoginView extends TextView {
         }
 
         stopPolling();
-        setText("Signed in.\nFinding Plex server...");
+        setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
         discoverServers(token);
     }
 
@@ -136,7 +136,7 @@ class PlexLoginView extends TextView {
 
     function onServersDiscovered(responseCode, data, accountToken) {
         if (responseCode != 200) {
-            showError("Server discovery failed", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.ServerDiscoveryFailed), responseCode);
             return;
         }
 
@@ -145,13 +145,13 @@ class PlexLoginView extends TextView {
             resources = data["resources"];
         }
         if (!(resources instanceof Lang.Array)) {
-            showError("No Plex servers found", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.NoPlexServers), responseCode);
             return;
         }
 
         var selected = selectServer(resources);
         if (selected == null) {
-            showError("No reachable Plex server", responseCode);
+            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), responseCode);
             return;
         }
 
@@ -164,7 +164,7 @@ class PlexLoginView extends TextView {
         );
         System.println("Plex artwork connection: "
             + ((selected["artworkUri"] != null) ? selected["artworkUri"] : "none; using local fallback"));
-        setText("Connected to Plex:\n" + selected["name"]);
+        setText(Plexit.I18n.text(Rez.Strings.ConnectedPlex, [selected["name"]]));
     }
 
     function selectServer(resources) {
@@ -240,6 +240,6 @@ class PlexLoginView extends TextView {
 
     function showError(message, responseCode) {
         stopPolling();
-        setText(message + "\nError " + responseCode);
+        setText(message + "\n" + Plexit.I18n.text(Rez.Strings.ErrorCode, [responseCode]));
     }
 }
