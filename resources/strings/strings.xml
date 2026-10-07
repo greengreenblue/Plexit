@@ -48,6 +48,7 @@
     <string id="Playlists_label">Playlists</string>
     <string id="Albums_label">Albums</string>
     <string id="Artists_label">Artists</string>
+	<string id="Collections_label">Collections</string>
     <string id="Mixes_label">Mixes</string>
     <string id="RecentlyAdded_label">Recently Added</string>
     <string id="RecentlyPlayed_label">Recently Played</string>
@@ -86,6 +87,7 @@
     <string id="fetchingPlaylists">Fetching Playlists...</string>
     <string id="fetchingAlbums">Fetching Albums...</string>
     <string id="fetchingArtists">Fetching Artists...</string>
+	<string id="fetchingCollections">Fetching Collections...</string>
     <string id="playbackMenuTitle">Playlists</string>
 
     <string id="Menu_PlaylistSongs_title">Songs</string>

@@ -33,7 +33,6 @@ module Plexit {
             function initialize(title, collectionType) {
                 MenuBase.initialize(title, false);
                 d_collectionType = collectionType;
-                d_provider.setFallback(method(:onError));
             }
 
             function playlist_to_item(playlist) {
@@ -41,6 +40,9 @@ module Plexit {
                 if ((d_collectionType != null) && d_collectionType.equals("album")
                     && (playlist.subtitle() != null)) {
                     sublabel = playlist.subtitle();
+				} else if ((d_collectionType != null) && d_collectionType.equals("collection")
+					&& (playlist.subtitle() != null)) {
+					sublabel = playlist.subtitle();
 				} else if ((d_collectionType != null) && (playlist.count() == 0)) {
 					if (d_collectionType.equals("album")) { sublabel = "Album"; }
 					else if (d_collectionType.equals("artist")) { sublabel = "Artist"; }
@@ -74,12 +76,19 @@ module Plexit {
                 }
                 if (d_loading) { return false; }
                 d_loading = true;
+				// All browse menus share the same provider. Register the fallback
+				// immediately before this request so an error is returned to the
+				// menu that is actually loading, not to whichever sibling menu was
+				// constructed last.
+				d_provider.setFallback(method(:onError));
                 if (d_collectionType == null) {
                     d_provider.getAllPlaylists(method(:onGetAllCollections));
                 } else if (d_collectionType.equals("album")) {
                     d_provider.getAllAlbums(method(:onGetAllCollections));
 				} else if (d_collectionType.equals("genre")) {
 					d_provider.getAllGenres(method(:onGetAllCollections));
+				} else if (d_collectionType.equals("collection")) {
+					d_provider.getAllPlexCollections(method(:onGetAllCollections));
                 } else {
                     d_provider.getAllArtists(method(:onGetAllCollections));
                 }
@@ -89,7 +98,11 @@ module Plexit {
             function managesId(id) {
                 if (!(id instanceof Lang.String)) { return false; }
                 if (d_collectionType == null) {
-                    return (id.find("album:") != 0) && (id.find("artist:") != 0);
+                    return (id.find("album:") != 0)
+						&& (id.find("artist:") != 0)
+						&& (id.find("collection:") != 0)
+						&& (id.find("mix:") != 0)
+						&& (id.find("genre:") != 0);
                 }
                 return id.find(d_collectionType + ":") == 0;
             }
@@ -237,6 +250,9 @@ module Plexit {
                     }
 					if (d_collectionType.equals("genre")) {
 						return WatchUi.loadResource(Rez.Strings.fetchingGenres);
+					}
+					if (d_collectionType.equals("collection")) {
+						return WatchUi.loadResource(Rez.Strings.fetchingCollections);
 					}
                     return WatchUi.loadResource(Rez.Strings.fetchingArtists);
                 }

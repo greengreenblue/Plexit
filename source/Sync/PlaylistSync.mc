@@ -42,7 +42,8 @@ class PlaylistSync extends Deferrable {
 			// selected from Plex Browse. Never turn a malformed/unsupported
 			// metadata response into a successful empty album or artist.
 			var id = d_iplaylist.id();
-			if ((id.find("album:") == 0) || (id.find("artist:") == 0)) {
+			if ((id.find("album:") == 0) || (id.find("artist:") == 0)
+				|| (id.find("collection:") == 0)) {
 				onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
 				return;
 			}

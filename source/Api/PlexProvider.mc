@@ -44,6 +44,7 @@ class PlexProvider {
 		PLEX_DYNAMIC_METADATA,
 		PLEX_DYNAMIC_SONGS,
 		PLEX_LIBRARY_GENRES,
+		PLEX_LIBRARY_COLLECTIONS,
 	}
 
     function initialize(settings) {
@@ -284,12 +285,29 @@ class PlexProvider {
 		d_api.library_sections(self.method(:on_do_library_sections), d_params);
 	}
 
+	function getAllPlexCollections(callback) {
+		d_callback = callback;
+		d_collectionType = "collection";
+		d_response = [];
+		d_sectionIds = [];
+		d_sectionIndex = 0;
+		d_params = {};
+		d_action = PLEX_LIBRARY_COLLECTIONS;
+		d_api.library_sections(self.method(:on_do_library_sections), d_params);
+	}
+
 	function getAllCollections(type, callback) {
 		d_callback = callback;
 		d_collectionType = type;
 		d_response = [];
 		d_sectionIds = [];
 		d_sectionIndex = 0;
+		// A previous large response may have reduced the adaptive page size all
+		// the way to one. Every new browse operation must start with a clean
+		// paging state, otherwise one unusually large artist cannot be retried.
+		d_limit = MAX_LIMIT;
+		d_offset = OFFSET;
+		d_count = MAX_COUNT;
 		d_params = {};
 		d_action = PLEX_LIBRARY_SECTIONS;
 		d_api.library_sections(self.method(:on_do_library_sections), d_params);
@@ -317,6 +335,12 @@ class PlexProvider {
 		}
 		if (d_action == PLEX_LIBRARY_GENRES) {
 			requestGenres();
+			return;
+		}
+		if (d_action == PLEX_LIBRARY_COLLECTIONS) {
+			d_limit = MAX_LIMIT;
+			d_offset = OFFSET;
+			requestCollections();
 			return;
 		}
 		d_offset = OFFSET;
@@ -357,10 +381,52 @@ class PlexProvider {
 		d_callback.invoke(completed);
 	}
 
+	function requestCollections() {
+		d_params = {
+			"sort" => "titleSort:asc",
+			"X-Plex-Container-Size" => d_limit,
+			"X-Plex-Container-Start" => d_offset,
+		};
+		d_api.library_section_collections(
+			self.method(:on_do_collections),
+			d_params,
+			d_sectionIds[d_sectionIndex]
+		);
+	}
+
+	function on_do_collections(response) {
+		var metadata = response["Metadata"];
+		if (metadata instanceof Lang.Dictionary) { metadata = [ metadata ]; }
+		if (!(metadata instanceof Lang.Array)) { metadata = []; }
+		for (var idx = 0; idx < metadata.size(); ++idx) {
+			d_response.add(plex_to_collection(metadata[idx], "collection"));
+		}
+		if (metadata.size() >= d_limit) {
+			d_offset += d_limit;
+			requestCollections();
+			return;
+		}
+		d_sectionIndex += 1;
+		if (d_sectionIndex < d_sectionIds.size()) {
+			d_offset = OFFSET;
+			requestCollections();
+			return;
+		}
+		d_action = null;
+		var completed = d_response;
+		d_response = [];
+		d_callback.invoke(completed);
+	}
+
 	function requestLibraryItems() {
 		d_params = {
 			"type" => d_collectionType.equals("album") ? 9 : 8,
 			"sort" => "titleSort:asc",
+			// Browse only needs top-level identifiers, titles and counts. Artist
+			// records can otherwise contain enough nested metadata to exceed the
+			// Connect IQ response limit even with a small page size.
+			"excludeFields" => "summary,guid,thumb,art,theme,addedAt,updatedAt,index,originallyAvailableAt,contentRating,rating,viewCount,lastViewedAt,ultraBlurColors",
+			"excludeElements" => "Genre,Country,Collection,Guid,Image,Similar,Location,Mood,Style",
 			"X-Plex-Container-Size" => d_limit,
 			"X-Plex-Container-Start" => d_offset,
 		};
@@ -373,7 +439,9 @@ class PlexProvider {
 
 	function on_do_library_items(response) {
 		var metadata = response["Metadata"];
-		if (!(metadata instanceof Lang.Array)) {
+		if (metadata instanceof Lang.Dictionary) {
+			metadata = [ metadata ];
+		} else if (!(metadata instanceof Lang.Array)) {
 			metadata = [];
 		}
 		for (var idx = 0; idx < metadata.size(); ++idx) {
@@ -406,6 +474,15 @@ class PlexProvider {
 		}
 		var name = item["title"];
 		var subtitle = type.equals("album") ? item["parentTitle"] : null;
+		if (type.equals("collection")) {
+			var subtype = item["subtype"];
+			if (subtype instanceof Lang.String) {
+				subtitle = subtype.equals("artist")
+					? "Artist collection" : "Album collection";
+			} else {
+				subtitle = "Music collection";
+			}
+		}
 		return new Playlist({
 			"id" => type + ":" + item["ratingKey"],
 			"name" => name,
@@ -421,6 +498,7 @@ class PlexProvider {
 		if (id.find("artist:") == 0) { return "artist"; }
 		if (id.find("mix:") == 0) { return "mix"; }
 		if (id.find("genre:") == 0) { return "genre"; }
+		if (id.find("collection:") == 0) { return "collection"; }
 		return null;
 	}
 
@@ -785,6 +863,10 @@ class PlexProvider {
 			requestGenres();
 			return;
 		}
+		if (d_action == PLEX_LIBRARY_COLLECTIONS) {
+			requestCollections();
+			return;
+		}
 		if (d_action == PLEX_DYNAMIC_METADATA) {
 			d_api.library_sections(self.method(:on_do_dynamic_metadata), d_params);
 			return;
@@ -867,6 +949,7 @@ class PlexProvider {
 			&& (d_limit > 1)) {
 			
 			d_limit = (d_limit / 2).toNumber();		// half the response
+			System.println("Plex response too large; retrying with page size " + d_limit);
 			do_();									// retry the request
 			return;
 		}
