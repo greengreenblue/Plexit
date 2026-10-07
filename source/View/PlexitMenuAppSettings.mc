@@ -25,6 +25,12 @@ module Plexit {
 						METHOD => method(:onToggleSkip30s),
 						OPTION => method(:stateSkip30s),
 					},
+					{
+						LABEL => WatchUi.loadResource(Rez.Strings.prefer_musicbrainz_artwork),
+						SUBLABEL => null,
+						METHOD => method(:onToggleMusicBrainzArtwork),
+						OPTION => method(:stateMusicBrainzArtwork),
+					},
 				]);
 			}
 
@@ -53,6 +59,16 @@ module Plexit {
 					"skip_30s", 
 					!Application.Properties.getValue("skip_30s"));
 				Media.requestPlaybackProfileUpdate();
+			}
+
+			function stateMusicBrainzArtwork() {
+				return Application.Properties.getValue("prefer_musicbrainz_artwork");
+			}
+
+			function onToggleMusicBrainzArtwork() {
+				Application.Properties.setValue(
+					"prefer_musicbrainz_artwork",
+					!stateMusicBrainzArtwork());
 			}
 
 			function delegate() {

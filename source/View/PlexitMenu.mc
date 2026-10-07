@@ -246,6 +246,21 @@ module Plexit {
 			}
 		}
 
+        // Menu2InputDelegate is only valid for a native Menu2. Loading/error
+        // screens are ordinary Views and need a BehaviorDelegate instead.
+        class MenuLoadingDelegate extends WatchUi.BehaviorDelegate {
+            private var d_menu;
+            function initialize(menu) {
+                BehaviorDelegate.initialize();
+                d_menu = menu;
+            }
+            function onBack() {
+                d_menu.onLoadingBack();
+                WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+                return true;
+            }
+        }
+
 		class MenuBase {
 			private var d_title;
 			private var d_loaded;
@@ -280,6 +295,11 @@ module Plexit {
 				d_items = [];
 				d_loaded = false;
 			}
+
+            function onLoadingBack() {
+                setOnLoaded(null);
+                unload();
+            }
 
 			function loaded() {
 				return d_loaded;
@@ -428,13 +448,13 @@ module Plexit {
 				// for loaded menus: check error
 				var error = menu.error();
 				if ((error != null) && (loaded == true)) {
-					loadView(new ErrorView(error), null, WatchUi.SLIDE_IMMEDIATE);
+					loadView(new ErrorView(error), new MenuLoadingDelegate(menu), WatchUi.SLIDE_IMMEDIATE);
 					return;
 				}
 
 				// for empty menus, use placeholder
 				if (menu.getItem(0) == null) {
-					loadView(new TextView(menu.placeholder()), null, WatchUi.SLIDE_IMMEDIATE);
+					loadView(new TextView(menu.placeholder()), new MenuLoadingDelegate(menu), WatchUi.SLIDE_IMMEDIATE);
 					return;
 				}
 
@@ -455,13 +475,13 @@ module Plexit {
 			function onLoaded(error) {
 				// switch to error view on error
 				if (error instanceof Plexit.Error) {
-					loadView(new ErrorView(error), null, WatchUi.SLIDE_IMMEDIATE);
+					loadView(new ErrorView(error), new MenuLoadingDelegate(d_menu), WatchUi.SLIDE_IMMEDIATE);
 					return;
 				}
 
 				// only show menu if there are items to show
 				if (d_menu.getItem(0) == null) {
-					loadView(new TextView(d_menu.placeholder()), null, WatchUi.SLIDE_IMMEDIATE);
+					loadView(new TextView(d_menu.placeholder()), new MenuLoadingDelegate(d_menu), WatchUi.SLIDE_IMMEDIATE);
 				} else {
 					loadView(new MenuView(d_menu), d_delegate, WatchUi.SLIDE_IMMEDIATE);
 				}

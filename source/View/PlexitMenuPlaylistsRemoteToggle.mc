@@ -1,5 +1,6 @@
 using Toybox.Lang;
 using Toybox.WatchUi;
+using Toybox.Timer;
 
 module Plexit {
     module Menu {
@@ -28,7 +29,65 @@ module Plexit {
             private var d_allCollections = [];
             private var d_search = "";
             private var d_visibleStart = 0;
-            private const PAGE_SIZE = 40;
+            private const PAGE_SIZE = 20;
+            private var d_browser = null;
+            private var d_cursor = null;
+            private var d_nextCursor = null;
+            private var d_history = [];
+            private var d_artist = null;
+            private var d_pageReady = false;
+            private var d_searchPending = false;
+            private var d_searchTimer = null;
+
+            function setArtist(id) { d_artist = id; }
+
+            function usesServerPages() {
+                return (d_collectionType == null) || d_collectionType.equals("album")
+                    || d_collectionType.equals("artist");
+            }
+
+            function startPage() {
+                if (d_browser != null) { d_browser.cancel(); }
+                d_loading = true;
+                d_allCollections = [];
+                d_pageReady = false;
+                d_browser = new PlexBrowse(method(:onPage), method(:onError));
+                d_browser.start(d_collectionType, d_search, d_cursor, d_artist);
+            }
+
+            function onPage(collections, next) {
+                d_browser = null;
+                d_nextCursor = next;
+                d_pageReady = true;
+                d_allCollections = collections;
+                // Page absence does not mean that a saved remote item was deleted.
+                for (var i = 0; i < collections.size(); i += 1) {
+                    var stored = new IPlaylist(collections[i].id());
+                    if (stored.stored()) {
+                        stored.updateMeta(collections[i]);
+                        stored.setRemote(true);
+                    }
+                }
+                rebuildItems();
+                d_loading = false;
+                MenuBase.onLoaded(null);
+            }
+
+            function reloadPage() {
+                d_loading = true;
+                unload();
+                setOnLoaded(method(:onPageReloaded));
+                // Release the old native menu and its rows while loading.
+                WatchUi.switchToView(new TextView(placeholder()), new MenuLoadingDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+                startPage();
+            }
+
+            function onPageReloaded(error) {
+                setOnLoaded(null);
+                if (error != null) {
+                    WatchUi.switchToView(new ErrorView(error), new MenuLoadingDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+                } else { replaceMenuView(); }
+            }
 
             function initialize(title, collectionType) {
                 MenuBase.initialize(title, false);
@@ -37,7 +96,8 @@ module Plexit {
 
             function playlist_to_item(playlist) {
                 var sublabel = playlist.count().toString() + " songs";
-                if ((d_collectionType != null) && d_collectionType.equals("album")
+                if (((d_collectionType != null) && d_collectionType.equals("album")
+                    || (usesServerPages() && !d_search.equals("")))
                     && (playlist.subtitle() != null)) {
                     sublabel = playlist.subtitle();
 				} else if ((d_collectionType != null) && d_collectionType.equals("collection")
@@ -47,6 +107,10 @@ module Plexit {
 					if (d_collectionType.equals("album")) { sublabel = "Album"; }
 					else if (d_collectionType.equals("artist")) { sublabel = "Artist"; }
 					else { sublabel = "Genre"; }
+                }
+                if (usesServerPages() && !d_search.equals("")
+                    && (playlist.id().find("artist:") == 0)) {
+                    sublabel = "Browse albums";
                 }
                 if (!playlist.remote()) { sublabel += " - local only"; }
                 var storedPlaylist = new IPlaylist(playlist.id());
@@ -58,7 +122,7 @@ module Plexit {
                     // Native menus should only carry stable primitive IDs. The
                     // matching remote object is resolved from d_allCollections.
                     METHOD => playlist.id(),
-                    OPTION => enabled,
+                    OPTION => (usesServerPages() && !d_search.equals("") && (playlist.id().find("artist:") == 0)) ? null : enabled,
                 };
             }
 
@@ -70,12 +134,13 @@ module Plexit {
                 // Re-entering this cached menu must reflect selections persisted
                 // by the previous native menu instance immediately.
                 PlaylistStore.reload();
-                if (d_allCollections.size() > 0) {
+                if (d_pageReady || (d_allCollections.size() > 0)) {
                     rebuildItems();
                     return true;
                 }
                 if (d_loading) { return false; }
                 d_loading = true;
+                if (usesServerPages()) { startPage(); return false; }
 				// All browse menus share the same provider. Register the fallback
 				// immediately before this request so an error is returned to the
 				// menu that is actually loading, not to whichever sibling menu was
@@ -144,7 +209,7 @@ module Plexit {
             }
 
             function matchesSearch(playlist) {
-                if (d_search.equals("")) { return true; }
+                if (usesServerPages() || d_search.equals("")) { return true; }
                 var query = d_search.toLower();
                 if (playlist.name().toLower().find(query) != null) { return true; }
                 return (playlist.subtitle() != null)
@@ -153,7 +218,7 @@ module Plexit {
 
             function rebuildItems() {
                 var menuItems = [];
-                if (d_collectionType != null) {
+                if ((d_collectionType != null) && (d_artist == null)) {
                     menuItems.add({
                         LABEL => WatchUi.loadResource(Rez.Strings.Search_label),
                         SUBLABEL => d_search.equals("")
@@ -168,7 +233,7 @@ module Plexit {
                         });
                     }
                 }
-                if (d_visibleStart > 0) {
+                if ((usesServerPages() && (d_history.size() > 0)) || (d_visibleStart > 0)) {
                     menuItems.add({
                         LABEL => WatchUi.loadResource(Rez.Strings.PreviousResults_label),
                         SUBLABEL => null,
@@ -185,10 +250,10 @@ module Plexit {
                         matched += 1;
                     }
                 }
-                if (matched > (d_visibleStart + PAGE_SIZE)) {
+                if ((usesServerPages() && (d_nextCursor != null)) || (matched > (d_visibleStart + PAGE_SIZE))) {
                     menuItems.add({
                         LABEL => WatchUi.loadResource(Rez.Strings.ShowMore_label),
-                        SUBLABEL => (matched - d_visibleStart - PAGE_SIZE) + " remaining",
+                        SUBLABEL => usesServerPages() ? null : (matched - d_visibleStart - PAGE_SIZE) + " remaining",
                         METHOD => method(:onShowMore),
                     });
                 }
@@ -196,12 +261,24 @@ module Plexit {
             }
 
             function onShowMore() {
+                if (usesServerPages()) {
+                    d_history.add(d_cursor);
+                    d_cursor = d_nextCursor;
+                    reloadPage();
+                    return;
+                }
                 d_visibleStart += PAGE_SIZE;
                 rebuildItems();
                 replaceMenuView();
             }
 
             function onShowPrevious() {
+                if (usesServerPages()) {
+                    d_cursor = d_history[d_history.size() - 1];
+                    d_history = d_history.slice(0, d_history.size() - 1);
+                    reloadPage();
+                    return;
+                }
                 d_visibleStart -= PAGE_SIZE;
                 if (d_visibleStart < 0) { d_visibleStart = 0; }
                 rebuildItems();
@@ -227,10 +304,37 @@ module Plexit {
             function setSearch(search) {
                 d_search = (search == null) ? "" : search;
                 d_visibleStart = 0;
+                if (usesServerPages()) {
+                    d_cursor = null;
+                    d_history = [];
+                    if (d_browser != null) { d_browser.cancel(); }
+                    // Defer the view switch until the native TextPicker has
+                    // closed and MenuView.onShow has returned. Switching views
+                    // inside onShow re-enters the simulator's native UI stack.
+                    d_searchPending = true;
+                    if (d_searchTimer != null) { d_searchTimer.stop(); }
+                    d_searchTimer = new Timer.Timer();
+                    d_searchTimer.start(method(:resumeSearch), 100, false);
+                    return;
+                }
                 rebuildItems();
             }
 
+            function resumeSearch() {
+                if (!d_searchPending) { return; }
+                d_searchPending = false;
+                d_searchTimer = null;
+                reloadPage();
+            }
+
             function onClearSearch() {
+                if (usesServerPages()) {
+                    setSearch("");
+                    d_searchPending = false;
+                    if (d_searchTimer != null) { d_searchTimer.stop(); d_searchTimer = null; }
+                    reloadPage();
+                    return;
+                }
                 d_search = "";
                 d_visibleStart = 0;
                 rebuildItems();
@@ -260,12 +364,21 @@ module Plexit {
             }
 
             function onError(error) {
+                d_browser = null;
                 d_loading = false;
                 MenuBase.onLoaded(error);
             }
 
             function onPlaylistToggle(item) {
                 var id = item.getId();
+                if (usesServerPages() && !d_search.equals("") && (id.find("artist:") == 0)) {
+                    var artist = findCollection(id);
+                    if (artist == null) { return; }
+                    var albums = new PlaylistsRemoteToggle(artist.name(), "album");
+                    albums.setArtist(id.substring(7, id.length()));
+                    albums.onOpen();
+                    return;
+                }
                 var playlist = findCollection(id);
                 if (playlist == null) {
                     System.println("Offline selection ignored: missing collection " + id);
@@ -297,7 +410,17 @@ module Plexit {
                 return null;
             }
 
+            function onLoadingBack() { onBrowseBack(); }
+
             function onBrowseBack() {
+                if (d_browser != null) { d_browser.cancel(); d_browser = null; }
+                setOnLoaded(null);
+                d_pageReady = false;
+                d_searchPending = false;
+                if (d_searchTimer != null) { d_searchTimer.stop(); d_searchTimer = null; }
+                d_cursor = null;
+                d_nextCursor = null;
+                d_history = [];
                 // AddMusic keeps its child menu objects alive for fast navigation.
                 // Do not let a complete Plex album/artist catalogue survive into
                 // an immediate audio sync, where it substantially increases the

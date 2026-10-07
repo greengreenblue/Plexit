@@ -147,6 +147,12 @@ class PlexAPI extends Api {
         Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
     }
 
+    function hubs_search(callback, params) {
+        Api.setCallback(callback);
+        Communications.makeWebRequest(url() + "/hubs/search", Utils.merge(d_params, params),
+            d_options, self.method(:onResponse));
+    }
+
 	function library_sections(callback, params) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections";
