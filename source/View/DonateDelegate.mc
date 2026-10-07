@@ -2,6 +2,7 @@
  	
 	function initialize() {
 		TapDelegate.initialize(method(:openLink));
+ 		openLink();
 	}
 
 	function openLink() {
