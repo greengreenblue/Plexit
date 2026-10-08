@@ -1,9 +1,9 @@
 class PlexitVersion {
 
 	private var d_major = 0;
-	private var d_minor = 2;
-	private var d_patch = 10;
-	private var d_name = "hippocoon";
+	private var d_minor = 3;
+	private var d_patch = 0;
+	private var d_name = "";
 
 	function initialize(storage) {
 		if (storage == null) {
@@ -46,7 +46,7 @@ class PlexitVersion {
 		return d_major.toString() 
 				+ "." + d_minor.toString()
 				+ "." + d_patch.toString()
-				+ "-" + d_name.toString();
+				+ (d_name.equals("") ? "" : "-" + d_name.toString());
 	}
 
 	function toStorage() {

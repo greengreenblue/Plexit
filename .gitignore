@@ -4,3 +4,4 @@ bin/
 .vscode/
 build*.sh
 run*.sh
+!build-release.sh
