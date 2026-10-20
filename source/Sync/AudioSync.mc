@@ -82,7 +82,7 @@ class AudioSync extends Deferrable {
 	}
 	
     // Callback for when a song is downloaded
-	function onDownloaded(refId) {
+	function onDownloaded(refId, downloadBytes) {
 		if (refId == null) {
 			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
 			return;
@@ -95,6 +95,7 @@ class AudioSync extends Deferrable {
 			return;
 		}
 		var storedSong = new ISong(downloadedId);
+		storedSong.setDownloadBytes(downloadBytes);
 		System.println("Audio cached successfully: " + downloadedId
 			+ ", refId=" + storedSong.refId()
 			+ ", pending=" + SongStore.getTodos().size());

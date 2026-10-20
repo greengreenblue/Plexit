@@ -19,6 +19,7 @@ class Api {
     private var d_usr;      // the user 
     private var d_key;      // the key used to login
 	private var d_lastProgressBytes = 0;
+	private var d_downloadBytes = null;
 
 
     function initialize(url_add) {
@@ -124,6 +125,10 @@ class Api {
 
 	function onProgress(totalBytesTransferred, fileSize) {
 		if (fileSize != null && fileSize > 0) {
+			// Persisted by AudioSync only after a successful ContentRef response.
+			// A progress callback without fileSize may be the last callback before
+			// completion, so transferred bytes alone are not a proven file size.
+			d_downloadBytes = fileSize;
 			var progress = 100 * (totalBytesTransferred / fileSize.toFloat());
 			d_progress.invoke(progress);
 			return;
@@ -142,6 +147,11 @@ class Api {
 
 	function beginDownloadProgress() {
 		d_lastProgressBytes = 0;
+		d_downloadBytes = null;
+	}
+
+	function downloadBytes() {
+		return d_downloadBytes;
 	}
 
     function setCallback(callback) {

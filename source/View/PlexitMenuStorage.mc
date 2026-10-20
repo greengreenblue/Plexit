@@ -174,20 +174,29 @@ module Plexit {
 
 			function downloadSummary(playlist) {
 				var downloaded = 0;
+				var bytes = 0.0;
+				var estimated = false;
 				var songIds = playlist.songs();
 				for (var idx = 0; idx < songIds.size(); ++idx) {
 					var song = new ISong(songIds[idx]);
 					if (song.refId() != null) {
 						downloaded += 1;
+						var size = song.downloadBytes();
+						if (size != null && size > 0) {
+							bytes += size;
+						} else {
+							// Legacy downloads and responses without Content-Length.
+							// Single-track collections may have older, stale song duration.
+							var seconds = (songIds.size() == 1) ? playlist.time() : song.time();
+							bytes += seconds * 24000.0;
+							estimated = true;
+						}
 					}
 				}
 
-				// Garmin exposes total cache usage but not the byte size of an
-				// individual ContentRef. Use the authoritative collection duration;
-				// old/long single-track downloads can contain stale per-song duration
-				// metadata. Plexit requests up to 192 kbps MP3, so this is an estimate.
-				var megabytes = (playlist.time() * 24000.0) / (1024.0 * 1024.0);
-				return Plexit.I18n.songs(downloaded) + " / ~" + megabytes.format("%.1f") + " MB";
+				var megabytes = bytes / (1024.0 * 1024.0);
+				var prefix = estimated ? "~" : "";
+				return Plexit.I18n.songs(downloaded) + " / " + prefix + megabytes.format("%.1f") + " MB";
 			}
 
 			function load() {

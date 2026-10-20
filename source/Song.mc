@@ -17,6 +17,7 @@ class Song extends Storable {
 		"art_id" => null,		// null if no art_id available
 
 		// required internal song properties
+		"downloadBytes" => null, // completed download size; null for legacy/unknown size
 		"refId" => null,		// null if no audio file is local
 		"refCount" => 0,		// count the number of playlists this song is on
 		"playback" => 0,		// last playback position
@@ -50,6 +51,10 @@ class Song extends Storable {
 		return d_storage["media_key"];
 	}
 	
+	function downloadBytes() {
+		return d_storage["downloadBytes"];
+	}
+
 	function refId() {
 		return d_storage["refId"];
 	}
@@ -136,6 +141,11 @@ class ISong extends Song {
 		return true;
 	}
 	 
+	function setDownloadBytes(bytes) {
+		d_storage["downloadBytes"] = bytes;
+		return save();
+	}
+
 	function setRefId(refId) {
 		// if equal, nothing to do
 		if (refId() == refId) {
@@ -158,6 +168,7 @@ class ISong extends Song {
 
 		// store new refId
 		d_storage["refId"] = refId;
+		d_storage["downloadBytes"] = null;
 		return save();		// always saved, due to responsibility for refId
 	}
 	

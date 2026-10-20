@@ -750,7 +750,7 @@ class PlexProvider {
 
 	function on_do_stream(contentRef) {
 		d_action = null;
-		d_callback.invoke(contentRef.getId());
+		d_callback.invoke(contentRef.getId(), d_api.downloadBytes());
 	}
 
 	function on_do_transcode_decision(responseCode, body) {
