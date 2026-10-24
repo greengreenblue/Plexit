@@ -104,6 +104,8 @@
             <iq:language>slo</iq:language>
             <iq:language>ces</iq:language>
             <iq:language>deu</iq:language>
+            <iq:language>pol</iq:language>
+            <iq:language>spa</iq:language>
         </iq:languages>
         <iq:barrels/>
     </iq:application>
