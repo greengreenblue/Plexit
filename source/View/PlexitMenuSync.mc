@@ -10,6 +10,7 @@ using Plexit.Storage;
 module Plexit {
 	module Menu {
 		class Sync extends MenuBase {
+            function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
 			
 			hidden var d_items = [];
 
@@ -18,7 +19,7 @@ module Plexit {
 			}
 
 			function load() {
-				return MenuBase.load([
+				var items = [
 					{
 						// Resolve these whenever the menu is shown again. Browse and the
 						// native Garmin sync screen both change persisted sync state while
@@ -27,12 +28,16 @@ module Plexit {
 						SUBLABEL => method(:getCurrentSyncStatus),
 						METHOD => method(:onStartSync),
 					},
+                ];
+                if (PlexServers.hasMultiple()) { items.add(new Menu.ServerChooser()); }
+                items.addAll([
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label), null),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Albums_label), "album"),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Artists_label), "artist"),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Collections_label), "collection"),
 					new Menu.DynamicMixes(),
 				]);
+                return MenuBase.load(items);
 			}
 
 			function getCurrentSyncLabel() {

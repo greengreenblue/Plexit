@@ -138,4 +138,21 @@
     <string id="RatingsWaiting_one">Čeká $1$ hodnocení</string>
     <string id="RatingsWaiting_few">Čekají $1$ hodnocení</string>
     <string id="RatingsWaiting_many">Čeká $1$ hodnocení</string>
+    <string id="PlexServerAddress">Adresa serveru</string>
+    <string id="PlexInvalidServerAddress">Zadejte platnou HTTPS adresu serveru bez přihlašovacích údajů nebo parametrů.</string>
+    <string id="PlexServerAddressSaved">Adresa serveru uložena. Vraťte se a zopakujte načtení.</string>
+    <string id="MusicServers_label">Hudební servery</string>
+    <string id="MusicServer_label">Hudební server</string>
+    <string id="ServerEnabled_label">Zapnutý</string>
+    <string id="ChooseServer_label">Vybrat pro procházení</string>
+    <string id="ServerOnline_label">Dostupný</string>
+    <string id="ServerOffline_label">Offline</string>
+    <string id="ServerUnknown_label">Neověřený</string>
+    <string id="ServerUnavailable_label">Přístup nedostupný</string>
+    <string id="ServerDisabled_label">Vypnutý</string>
+    <string id="SyncIncompleteMessage">Část hudby se nepodařilo synchronizovat. Zkuste to znovu, až bude její server dostupný.</string>
+    <string id="RefreshServers_label">Obnovit seznam serverů</string>
+    <string id="ServerListUpdated">Seznam serverů byl obnoven. Vraťte se a vyberte hudební server.</string>
+    <string id="UseAutomaticAddress">Použít automatickou adresu</string>
+    <string id="AutomaticAddressEnabled">Vlastní adresa byla odstraněna. Automaticky se použijí adresy z Plexu.</string>
 </strings>

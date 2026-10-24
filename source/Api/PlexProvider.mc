@@ -3,6 +3,7 @@ using Plexit.Utils;
 class PlexProvider {
 
     private var d_api;
+    private var d_source;
 
     // callbacks
     private var d_callback;  // callback for finished request
@@ -48,6 +49,7 @@ class PlexProvider {
 	}
 
     function initialize(settings) {
+        d_source = settings["server_id"];
         d_api = new PlexAPI(
             settings,
             self.method(:onProgress),
@@ -56,6 +58,7 @@ class PlexProvider {
     }
 	
 	function onSettingsChanged(settings) {
+        d_source = settings["server_id"];
 		d_api.update(settings);
 	}
 
@@ -97,7 +100,7 @@ class PlexProvider {
 		d_callback = callback;
 		
 		d_params = {
-			"key" => id,
+			"key" => PlexSource.raw(id),
             "identifier" => "com.plexapp.plugins.library"
 		};
 		
@@ -113,7 +116,7 @@ class PlexProvider {
 	function rate(id, value, ratedAt, callback) {
 		d_callback = callback;
 		d_params = {
-			"key" => id,
+			"key" => PlexSource.raw(id),
 			"identifier" => "com.plexapp.plugins.library",
 			"rating" => value,
 			"ratedAt" => ratedAt,
@@ -177,7 +180,7 @@ class PlexProvider {
 		d_count = 1;		// expect only 1 object
 
 		d_params = {};
-        d_id = id;
+        d_id = PlexSource.raw(id);
 		d_collectionType = collectionType(id);
 
 		if ((d_collectionType != null)
@@ -191,7 +194,7 @@ class PlexProvider {
 	}
 
 	function on_do_dynamic_metadata(response) {
-		var stored = new IPlaylist(d_id);
+		var stored = new IPlaylist(PlexSource.qualify(d_source, d_id));
 		if (stored.stored()) {
 			stored.setRemote(true);
 			d_response.add(stored);
@@ -240,7 +243,7 @@ class PlexProvider {
 		// to continue into /children or /allLeaves instead of falsely completing
 		// the selection as an empty successful sync.
 		if (d_response.size() == 0) {
-			var storedCollection = new IPlaylist(d_id);
+			var storedCollection = new IPlaylist(PlexSource.qualify(d_source, d_id));
 			if (storedCollection.stored() && storedCollection.remote()) {
 				d_response.add(storedCollection);
 				System.println("Plex metadata wrapper missing; using stored collection " + d_id);
@@ -259,7 +262,7 @@ class PlexProvider {
 			items = 0;
 		}
 		return new Playlist({
-			"id" => playlist["ratingKey"],
+			"id" => PlexSource.qualify(d_source, playlist["ratingKey"]),
 			"name" => playlist["title"],
 			"songCount" => items.toNumber(),
 			"remote" => true,
@@ -363,7 +366,7 @@ class PlexProvider {
 			for (var idx = 0; idx < directories.size(); ++idx) {
 				var genre = directories[idx];
 				d_response.add(new Playlist({
-					"id" => "genre:" + d_sectionIds[d_sectionIndex] + ":" + genre["key"],
+					"id" => PlexSource.qualify(d_source, "genre:" + d_sectionIds[d_sectionIndex] + ":" + genre["key"]),
 					"name" => genre["title"],
 					"songCount" => 0,
 					"remote" => true,
@@ -484,7 +487,7 @@ class PlexProvider {
 			}
 		}
 		return new Playlist({
-			"id" => type + ":" + item["ratingKey"],
+			"id" => PlexSource.qualify(d_source, type + ":" + item["ratingKey"]),
 			"name" => name,
 			"subtitle" => subtitle,
 			"songCount" => count.toNumber(),
@@ -519,7 +522,7 @@ class PlexProvider {
 		d_response = [];
 
 		d_params = {};
-        d_id = id;
+        d_id = PlexSource.raw(id);
 
         // set range parameters
 		d_limit = MAX_LIMIT;
@@ -591,7 +594,7 @@ class PlexProvider {
 				}
 			}
 			d_response.add(new Song({
-				"id" => song["ratingKey"],
+				"id" => PlexSource.qualify(d_source, song["ratingKey"]),
 				"title" => song["title"],
 				"artist" => song["grandparentTitle"],
 				"time" => seconds,
@@ -599,7 +602,7 @@ class PlexProvider {
 				"media_key" => mediaKey,
 					// Track.thumb is the album cover. Track.art is a much larger
 					// artist/background image and is unsuitable for the watch player.
-					"art_id" => song["thumb"],
+					"art_id" => PlexSource.qualify(d_source, song["thumb"]),
 			}));
 			d_dynamicBytes += estimatedBytes;
 		}
@@ -704,7 +707,7 @@ class PlexProvider {
 	 */	
 	function getRefId(id, mime, mediaKey, type, callback) {
 		d_callback = callback;
-		d_id = id;
+		d_id = PlexSource.raw(id);
 		d_mediaKey = mediaKey;
 
 		// Preserve an existing MP3 without a lossy re-encode. Any failure is
@@ -780,7 +783,7 @@ class PlexProvider {
 		d_callback = callback;
 
 		d_params = {};
-		d_id = id;
+		d_id = PlexSource.raw(id);
 
 		d_action = PLEX_GET_ART;
 		do_();
@@ -821,6 +824,10 @@ class PlexProvider {
 	 * assumes required params are set, can be repeated
 	 */
 	function do_() {
+        if (!d_api.isAvailable()) {
+            onError(new Plexit.ApiError(Plexit.ApiError.ACCESS));
+            return;
+        }
 		
 		// ping does not need authentication
 		if (d_action == PLEX_PING) {

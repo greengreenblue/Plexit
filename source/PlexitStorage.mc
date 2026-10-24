@@ -47,6 +47,11 @@ module Plexit {
 			DYNAMIC_TRACK_LIMIT,
 			DYNAMIC_SIZE_LIMIT_MB,
 			RATINGS_PENDING,
+			PLEX_SERVER_URLS,	// append only: keep existing persisted enum keys stable
+			PLEX_SERVER_ID,
+			PLEX_CUSTOM_SERVER_URL,
+			PLEX_SERVERS,
+			PLEX_LEGACY_SERVER_ID,
 
 			VERSION = 200,	// version string of store
 		}

@@ -3,7 +3,7 @@ using Toybox.System;
 
 module Plexit {
     class RatingSync extends Deferrable {
-        private var d_provider = Plexit.Provider.get();
+        private var d_provider = null;
         private var f_progress;
         private var d_ids = [];
         private var d_idx = 0;
@@ -14,7 +14,7 @@ module Plexit {
             f_progress = progress;
             RatingStore.reload();
             d_ids = RatingStore.getIds();
-            d_provider.setFallback(method(:onError));
+
         }
 
         function sync() {
@@ -30,6 +30,9 @@ module Plexit {
             }
 
             d_rating = new Rating(storage);
+            if (PlexServers.skipSync(PlexSource.serverId(d_rating.id()))) { d_idx += 1; return sync(); }
+            d_provider = Plexit.Provider.forItem(d_rating.id());
+            d_provider.setFallback(method(:onError));
             d_provider.rate(
                 d_rating.id(),
                 d_rating.value(),
@@ -46,10 +49,11 @@ module Plexit {
         }
 
         function onError(error) {
-            // Preserve this and all remaining ratings for the next sync. Rating
+            // Preserve this rating for its source and continue other servers. Rating
             // write-back is useful but must not block music downloads.
             System.println("Plex rating sync deferred: " + error);
-            Deferrable.complete();
+            d_idx += 1;
+            sync();
         }
 
         function progress() {

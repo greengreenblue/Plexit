@@ -14,6 +14,7 @@ module Plexit {
 			function load() {
 				return MenuBase.load([
 					new Menu.AppSettings(),
+					new Menu.MusicServers(),
 					new Menu.Storage(),
 					{
 						LABEL => WatchUi.loadResource(Rez.Strings.Donate_label), 

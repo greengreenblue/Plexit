@@ -10,8 +10,73 @@ class PlexAPI extends Api {
 	private var d_photoSourceId = null;
 	private var d_photoUsingPublic = false;
 	private var d_artworkUrl = null;
+    private var d_request = null;
+    private var d_source = null;
+    private var d_configured = false;
+
+    function isAvailable() {
+        if (!d_configured) { return false; }
+        var record = PlexServers.get(d_source);
+        return (record == null) || ((record["enabled"] != false)
+            && (record["token"] instanceof Lang.String) && record["token"].equals(key()));
+    }
+
+    function cancelRequests() {
+        if (d_request != null) { d_request.cancel(); d_request = null; }
+    }
+
+    function url() {
+        var record = PlexServers.get(d_source);
+        if ((record != null) && (record["token"] instanceof Lang.String)
+            && record["token"].equals(key()) && (record["uri"] != null)) {
+            return record["uri"];
+        }
+        return Api.url();
+    }
+
+    function serverRequest(requestUrl, params, options, callback) {
+        if (!isAvailable()) { d_fallback.invoke(new Plexit.ApiError(Plexit.ApiError.ACCESS)); return; }
+        var base = url();
+        var path = requestUrl.substring(base.length(), requestUrl.length());
+        // A lost response does not prove a write failed. Do not replay ratings
+        // or scrobbles on another host and risk submitting the same event twice.
+        var retry = (path.find("/:/scrobble") != 0)
+            && (options[:method] != Communications.HTTP_REQUEST_METHOD_PUT);
+        cancelRequests();
+        var record = PlexServers.get(d_source);
+        var urls = (retry && (record != null)) ? PlexServers.urls(record) : [base];
+        if (retry && (record == null)) { urls = PlexAccount.connectionUrls(base); }
+        d_request = new PlexServerRequest(urls, path,
+            params, options, callback, method(:onWorkingAddress), retry);
+        d_request.setFailureCallback(method(:onAddressFailure));
+        d_request.start();
+    }
+
+    function onWorkingAddress(uri) {
+        Api.updateUrl(uri);
+        var record = PlexServers.get(d_source);
+        if ((record != null) && (record["token"] instanceof Lang.String) && record["token"].equals(key())) {
+            if (!uri.equals(record["uri"]) || !"online".equals(record["status"])) {
+                record["uri"] = uri;
+                record["status"] = "online";
+                PlexServers.save(record);
+            }
+        }
+        var active = Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID);
+        if ((active instanceof Lang.String) && active.equals(d_source)
+            && !uri.equals(Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_URL))) {
+            Application.Storage.setValue(Plexit.Storage.PLEX_SERVER_URL, uri);
+        }
+    }
+
+    function onAddressFailure(code) {
+        if (PlexServerRequest.canRetry(code)) { PlexServers.status(d_source, "offline"); }
+        else if ((code == 401) || (code == 403)) { PlexServers.status(d_source, "unavailable"); }
+    }
 
     function initialize(settings, progress, fallback) {
+        d_source = settings["server_id"];
+        d_configured = (settings["api_url"] != null) && (settings["api_key"] != null);
         Api.initialize("");
         Api.update(settings);
 		d_artworkUrl = settings.get("artwork_url");
@@ -34,7 +99,7 @@ class PlexAPI extends Api {
         var url = url() + "/identity";
 		var options = d_options;
 
-        Communications.makeWebRequest(url, {}, options, self.method(:onResponse));
+        serverRequest(url, {}, options, self.method(:onResponse));
     }
 
 	function scrobble(callback, params) {
@@ -49,7 +114,7 @@ class PlexAPI extends Api {
 		params = Plexit.Utils.merge(params, d_params);
 		options = Plexit.Utils.merge(options, d_options);
 
-		Communications.makeWebRequest(url, params, options, self.method(:onScrobble));
+		serverRequest(url, params, options, self.method(:onScrobble));
 	}
 
 	function rate(callback, params) {
@@ -69,7 +134,7 @@ class PlexAPI extends Api {
 			:responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_TEXT_PLAIN,
 		};
 		System.println("Submitting Plex rating for track " + params.get("key"));
-		Communications.makeWebRequest(url, null, options, self.method(:onRate));
+		serverRequest(url, null, options, self.method(:onRate));
 	}
 
 	function onRate(responseCode, data) {
@@ -112,7 +177,7 @@ class PlexAPI extends Api {
 		System.println("playlists: " + url);
         params = Utils.merge(d_params, params);
 
-        Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
+        serverRequest(url, params, d_options, self.method(:onResponse));
     }
 
     function onPlaylists(responseCode, data) {
@@ -135,7 +200,7 @@ class PlexAPI extends Api {
 		System.println("playlists_items: " + url);
         params = Utils.merge(d_params, params);
 
-        Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
+        serverRequest(url, params, d_options, self.method(:onResponse));
     }
 
     function playlist(callback, params, id) {
@@ -144,12 +209,12 @@ class PlexAPI extends Api {
         var url = url() + "/playlists/" + id;
 		System.println("playlist: " + url);
         params = Utils.merge(d_params, params);
-        Communications.makeWebRequest(url, params, d_options, self.method(:onResponse));
+        serverRequest(url, params, d_options, self.method(:onResponse));
     }
 
     function hubs_search(callback, params) {
         Api.setCallback(callback);
-        Communications.makeWebRequest(url() + "/hubs/search", Utils.merge(d_params, params),
+        serverRequest(url() + "/hubs/search", Utils.merge(d_params, params),
             d_options, self.method(:onResponse));
     }
 
@@ -157,7 +222,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections";
 		System.println("library_sections: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -169,7 +234,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/all";
 		System.println("library_section_all: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -181,7 +246,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/genre";
 		System.println("library_section_genres: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -193,7 +258,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/collections";
 		System.println("library_section_collections: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -205,7 +270,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id;
 		System.println("metadata: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -217,7 +282,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id + "/children";
 		System.println("metadata_children: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -229,7 +294,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id + "/allLeaves";
 		System.println("metadata_all_leaves: " + requestUrl);
-		Communications.makeWebRequest(
+		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
 			d_options,
@@ -260,7 +325,7 @@ class PlexAPI extends Api {
 			:fileDownloadProgressCallback => method(:onProgress),
    		};
 
-		Communications.makeWebRequest(url, params, options, self.method(:onStream));
+		serverRequest(url, params, options, self.method(:onStream));
 	}
     
     /**
@@ -299,7 +364,7 @@ class PlexAPI extends Api {
 		System.println("Plex transcode decision url: " + url);
 		// Never print requestParams/options here: both contain the Plex token.
 
-		Communications.makeWebRequest(url, requestParams, options, self.method(:onTranscodeDecision));
+		serverRequest(url, requestParams, options, self.method(:onTranscodeDecision));
 	}
 
 	function onTranscodeDecision(responseCode, data) {
@@ -345,7 +410,7 @@ class PlexAPI extends Api {
 			:fileDownloadProgressCallback => method(:onProgress),
    		};
 
-		Communications.makeWebRequest(url, requestParams, options, self.method(:onStream));
+		serverRequest(url, requestParams, options, self.method(:onStream));
 	}
 
 	function onStream(responseCode, data) {
@@ -385,7 +450,7 @@ class PlexAPI extends Api {
 		// image proxy never needs access to the user's private Plex server.
 		var metadataUrl = url() + "/library/metadata/" + ratingKey;
 		System.println("Resolving public artwork for Plex album " + ratingKey);
-		Communications.makeWebRequest(
+		serverRequest(
 			metadataUrl,
 			{ "includeGuids" => 1 },
 			d_options,
@@ -526,6 +591,9 @@ class PlexAPI extends Api {
 	}
 
 	function update(settings) {
+		cancelRequests();
+        d_source = settings["server_id"];
+        d_configured = (settings["api_url"] != null) && (settings["api_key"] != null);
 		Api.update(settings);
 		d_artworkUrl = settings.get("artwork_url");
 	}

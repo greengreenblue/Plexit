@@ -138,4 +138,21 @@
     <string id="RatingsWaiting_one">$1$ rating waiting</string>
     <string id="RatingsWaiting_few">$1$ ratings waiting</string>
     <string id="RatingsWaiting_many">$1$ ratings waiting</string>
+    <string id="PlexServerAddress">Server address</string>
+    <string id="PlexInvalidServerAddress">Enter a valid HTTPS server address without credentials or query parameters.</string>
+    <string id="PlexServerAddressSaved">Server address saved. Go back and retry Fetch.</string>
+    <string id="MusicServers_label">Music servers</string>
+    <string id="MusicServer_label">Music server</string>
+    <string id="ServerEnabled_label">Enabled</string>
+    <string id="ChooseServer_label">Select for browsing</string>
+    <string id="ServerOnline_label">Available</string>
+    <string id="ServerOffline_label">Offline</string>
+    <string id="ServerUnknown_label">Not checked</string>
+    <string id="ServerUnavailable_label">Access unavailable</string>
+    <string id="ServerDisabled_label">Disabled</string>
+    <string id="SyncIncompleteMessage">Some music could not be synced. Please retry when its server is available.</string>
+    <string id="RefreshServers_label">Refresh server list</string>
+    <string id="ServerListUpdated">Server list updated. Go back to choose a music server.</string>
+    <string id="UseAutomaticAddress">Use automatic address</string>
+    <string id="AutomaticAddressEnabled">Custom address removed. Plex addresses will be used automatically.</string>
 </strings>

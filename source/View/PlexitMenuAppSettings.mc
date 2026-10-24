@@ -20,6 +20,16 @@ module Plexit {
 						METHOD => method(:onPlexSignIn),
 					},
 					{
+						LABEL => WatchUi.loadResource(Rez.Strings.PlexServerAddress),
+						SUBLABEL => method(:serverAddress),
+						METHOD => method(:onServerAddress),
+					},
+					{
+                        LABEL => WatchUi.loadResource(Rez.Strings.UseAutomaticAddress),
+                        SUBLABEL => null,
+                        METHOD => method(:onAutomaticAddress),
+                    },
+					{
 						LABEL => WatchUi.loadResource(Rez.Strings.skip_30s),
 						SUBLABEL => WatchUi.loadResource(Rez.Strings.skip_30s_sublabel),
 						METHOD => method(:onToggleSkip30s),
@@ -41,6 +51,22 @@ module Plexit {
 				}
 				return serverName;
 			}
+
+			function serverAddress() {
+				var custom = Application.Storage.getValue(Storage.PLEX_CUSTOM_SERVER_URL);
+				if (custom != null) { return custom; }
+				return Application.Storage.getValue(Storage.PLEX_SERVER_URL);
+			}
+
+			function onServerAddress() {
+				if (!PlexAccount.isConnected()) { onPlexSignIn(); return; }
+				WatchUi.pushView(new WatchUi.TextPicker(serverAddress()),
+					new PlexServerAddressDelegate(), WatchUi.SLIDE_IMMEDIATE);
+			}
+
+            function onAutomaticAddress() {
+                Plexit.Menu.clearServerAddress(Application.Storage.getValue(Storage.PLEX_SERVER_ID));
+            }
 
 			function onPlexSignIn() {
 				WatchUi.pushView(new PlexLoginView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);

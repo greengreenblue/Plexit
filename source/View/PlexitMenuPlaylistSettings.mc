@@ -66,7 +66,9 @@ module Plexit {
                 var iplaylist = new IPlaylist(d_id);
                 var mins = (iplaylist.time() / 60).toNumber().toString();
                 var sublabel = Plexit.I18n.text(Rez.Strings.MinutesCount, [mins]);
-                if (!iplaylist.synced()) {
+                var sourceName = PlexServers.name(PlexSource.serverId(d_id));
+                if ((PlexServers.all().size() > 1) && !sourceName.equals("")) { sublabel += " · " + sourceName; }
+                if (!iplaylist.synced() && PlexServers.isEnabled(PlexSource.serverId(d_id))) {
                     sublabel += WatchUi.loadResource(Rez.Strings.NeedsSync_suffix);
                 }
                 return sublabel;

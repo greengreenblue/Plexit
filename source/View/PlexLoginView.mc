@@ -11,18 +11,37 @@ class PlexLoginView extends TextView {
     private var d_pollTimer = null;
     private var d_polling = false;
     private var d_pollCount = 0;
+    private var d_resources = null;
+    private var d_accountToken = null;
+    private var d_candidate = null;
+    private var d_triedUris = [];
+    private var d_active = false;
+    private var d_refreshOnly = false;
+
+    function refreshServers() {
+        d_active = true;
+        var token = Application.Storage.getValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+        if (token == null) { requestPin(); return; }
+        d_refreshOnly = true;
+        discoverServers(token);
+    }
 
     function initialize() {
         TextView.initialize(WatchUi.loadResource(Rez.Strings.ConnectingPlex));
     }
 
     function onShow() {
+        d_active = true;
         if (d_pinId == null) {
             requestPin();
         }
     }
 
     function onHide() {
+        d_active = false;
+        d_resources = null;
+        d_accountToken = null;
+        d_candidate = null;
         stopPolling();
         Communications.cancelAllRequests();
     }
@@ -149,7 +168,58 @@ class PlexLoginView extends TextView {
             return;
         }
 
-        var selected = selectServer(resources);
+        d_resources = resources;
+        d_accountToken = accountToken;
+        rememberDiscoveredServers(resources);
+        if (d_refreshOnly) {
+            var current = Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID);
+            if (current == null) { current = Application.Storage.getValue(Plexit.Storage.PLEX_LEGACY_SERVER_ID); }
+            var preferred = PlexServers.preferredServer(PlexServers.all(), current);
+            if (preferred != null) { PlexServers.select(preferred); }
+            d_resources = null;
+            d_accountToken = null;
+            setText(WatchUi.loadResource(Rez.Strings.ServerListUpdated));
+            return;
+        }
+        d_triedUris = [];
+        tryServerConnection();
+    }
+
+    function tryServerConnection() {
+        if (!d_active) { return; }
+        d_candidate = selectServer(d_resources, d_triedUris);
+        if (d_candidate == null) {
+            d_resources = null;
+            d_accountToken = null;
+            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
+            return;
+        }
+
+        d_triedUris.add(d_candidate["uri"]);
+        // Discovery advertises addresses; it does not prove they are reachable
+        // from this phone/watch. Probe with the server token before saving one.
+        Communications.makeWebRequest(
+            d_candidate["uri"] + "/library/sections",
+            null,
+            {
+                :method => Communications.HTTP_REQUEST_METHOD_GET,
+                :headers => PlexAccount.headers(d_candidate["token"]),
+                :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
+            },
+            method(:onServerConnectionChecked)
+        );
+    }
+
+    function onServerConnectionChecked(responseCode, data) {
+        if (!d_active) { return; }
+        if ((responseCode != 200) || !(data instanceof Lang.Dictionary)
+            || !(data["MediaContainer"] instanceof Lang.Dictionary)) {
+            System.println("Plex connection probe failed: " + responseCode);
+            tryServerConnection();
+            return;
+        }
+
+        var selected = d_candidate;
         if (selected == null) {
             showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), responseCode);
             return;
@@ -159,15 +229,20 @@ class PlexLoginView extends TextView {
             selected["name"],
             selected["uri"],
             selected["token"],
-            accountToken,
-            selected["artworkUri"]
+            d_accountToken,
+            selected["artworkUri"],
+            selected["urls"],
+            selected["serverId"]
         );
         System.println("Plex artwork connection: "
             + ((selected["artworkUri"] != null) ? selected["artworkUri"] : "none; using local fallback"));
         setText(Plexit.I18n.text(Rez.Strings.ConnectedPlex, [selected["name"]]));
+        d_resources = null;
+        d_accountToken = null;
+        d_candidate = null;
     }
 
-    function selectServer(resources) {
+    function selectServer(resources, triedUris) {
         var best = null;
         var bestScore = 1000;
 
@@ -175,6 +250,7 @@ class PlexLoginView extends TextView {
             var resource = resources[resourceIndex];
             if (!(resource instanceof Lang.Dictionary)
                 || !providesServer(resource["provides"])
+                || !(resource["accessToken"] instanceof Lang.String)
                 || !(resource["connections"] instanceof Lang.Array)) {
                 continue;
             }
@@ -183,12 +259,14 @@ class PlexLoginView extends TextView {
             var connections = resource["connections"];
             for (var connectionIndex = 0; connectionIndex < connections.size(); connectionIndex += 1) {
                 var connection = connections[connectionIndex];
-                if (!(connection instanceof Lang.Dictionary) || (connection["uri"] == null)) {
+                if (!(connection instanceof Lang.Dictionary) || (connection["uri"] == null)
+                    || (triedUris.indexOf(connection["uri"]) >= 0)) {
                     continue;
                 }
 
                 var score = ownedPenalty;
-                score += (connection["protocol"] == "https") ? 0 : 30;
+                score += ((connection["protocol"] instanceof Lang.String)
+                    && connection["protocol"].equals("https")) ? 0 : 30;
                 score += (connection["local"] == true) ? 0 : 10;
                 score += (connection["relay"] == true) ? 20 : 0;
                 if (score < bestScore) {
@@ -198,9 +276,63 @@ class PlexLoginView extends TextView {
                         "uri" => connection["uri"],
                         "token" => resource["accessToken"],
                         "artworkUri" => findArtworkConnection(connections),
+                        "urls" => serverConnectionUrls(resource),
+                        "serverId" => resource["clientIdentifier"],
                     };
                 }
             }
+        }
+        return best;
+    }
+
+    function rememberDiscoveredServers(resources) {
+        var records = [];
+        for (var i = 0; i < resources.size(); i += 1) {
+            var resource = resources[i];
+            if (!(resource instanceof Lang.Dictionary) || !providesServer(resource["provides"])
+                || !(resource["clientIdentifier"] instanceof Lang.String)
+                || !(resource["accessToken"] instanceof Lang.String)
+                || !(resource["connections"] instanceof Lang.Array)) { continue; }
+            var urls = serverConnectionUrls(resource);
+            if (urls.size() == 0) { continue; }
+            records.add({ "id" => resource["clientIdentifier"], "name" => resource["name"],
+                "token" => resource["accessToken"], "urls" => urls, "uri" => urls[0],
+                "artwork" => findArtworkConnection(resource["connections"]),
+                "custom" => null, "enabled" => true, "status" => "unknown" });
+        }
+        PlexServers.remember(records);
+    }
+
+    function serverConnectionUrls(resource) {
+        var urls = [];
+        // Use the same ranking as initial selection, but restrict candidates
+        // to this resource so a retry can never switch to a different server.
+        var candidate = selectServerWithoutUrls(resource, urls);
+        while (candidate != null) {
+            urls.add(candidate);
+            candidate = selectServerWithoutUrls(resource, urls);
+        }
+        return urls;
+    }
+
+    function selectServerWithoutUrls(resource, tried) {
+        var best = null;
+        var bestScore = 1000;
+        var connections = resource["connections"];
+        for (var i = 0; i < connections.size(); i += 1) {
+            var connection = connections[i];
+            if (!(connection instanceof Lang.Dictionary)
+                || !(connection["uri"] instanceof Lang.String)) { continue; }
+            var used = false;
+            for (var j = 0; j < tried.size(); j += 1) {
+                if (tried[j].equals(connection["uri"])) { used = true; break; }
+            }
+            if (used) { continue; }
+            var protocol = connection["protocol"];
+            var score = ((protocol instanceof Lang.String) && protocol.equals("https")) ? 0 : 30;
+            score += (connection["local"] == true) ? 0 : 10;
+            score += (connection["relay"] == true) ? 20 : 0;
+            if (score < bestScore) { best = connection["uri"]; bestScore = score; }
         }
         return best;
     }
@@ -211,7 +343,8 @@ class PlexLoginView extends TextView {
             var connection = connections[index];
             if (!(connection instanceof Lang.Dictionary)
                 || (connection["uri"] == null)
-                || (connection["protocol"] != "https")
+                || !(connection["protocol"] instanceof Lang.String)
+                || !connection["protocol"].equals("https")
                 || (connection["local"] == true)) {
                 continue;
             }
@@ -241,5 +374,13 @@ class PlexLoginView extends TextView {
     function showError(message, responseCode) {
         stopPolling();
         setText(message + "\n" + Plexit.I18n.text(Rez.Strings.ErrorCode, [responseCode]));
+    }
+}
+
+class PlexServerRefreshView extends PlexLoginView {
+    private var d_started = false;
+    function initialize() { PlexLoginView.initialize(); }
+    function onShow() {
+        if (!d_started) { d_started = true; refreshServers(); }
     }
 }

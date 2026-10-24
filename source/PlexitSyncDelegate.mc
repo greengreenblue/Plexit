@@ -30,6 +30,7 @@ module Plexit {
 
 		// Starts the sync with the system
 		function onStartSync() {
+            PlexServers.beginSync();
 			// Garmin can keep the sync delegate in a separate long-lived runtime
 			// context. Offline selections made in the configuration views are
 			// already persisted, but this context may still hold the PlaylistStore
@@ -87,7 +88,17 @@ module Plexit {
 
 			reportProgress(100);
 			// finish sync
-			d_notifySyncComplete.invoke(null);
+            var incomplete = false;
+            var pendingIds = SongStore.getTodos();
+            for (var pendingIdx = 0; pendingIdx < pendingIds.size(); pendingIdx += 1) {
+                if (PlexServers.isEnabled(PlexSource.serverId(pendingIds[pendingIdx]))) { incomplete = true; }
+            }
+            for (var checkIdx = 0; checkIdx < playlistIds.size(); checkIdx += 1) {
+                var selection = new IPlaylist(playlistIds[checkIdx]);
+                if (selection.local() && !selection.synced()
+                    && PlexServers.isEnabled(PlexSource.serverId(selection.id()))) { incomplete = true; }
+            }
+			d_notifySyncComplete.invoke(incomplete ? WatchUi.loadResource(Rez.Strings.SyncIncompleteMessage) : null);
 			Application.Storage.setValue(Storage.LAST_SYNC, { "time" => Time.now().value(), });
 		}
 

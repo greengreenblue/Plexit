@@ -14,6 +14,7 @@ module Plexit {
                 MenuBase.initialize(title, false);
 
                 d_id = id;
+                d_provider = Plexit.Provider.forItem(id);
 
                 // items should be lazy loaded by a menu loader
                 // this prevents multiple concurrent requests

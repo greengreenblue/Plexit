@@ -8,24 +8,29 @@ using Plexit.Storage;
 module Plexit {
 	module Menu {
 		class AddMusic extends MenuBase {
+            function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
 
 			function initialize() {
 				MenuBase.initialize(WatchUi.loadResource(Rez.Strings.AddMusic_label), false);
 			}
 
 			function load() {
-				return MenuBase.load([
+				var items = [
 					{
 						LABEL => method(:getSyncLabel),
 						SUBLABEL => method(:getSyncStatus),
 						METHOD => method(:onStartSync),
 					},
+                ];
+                if (PlexServers.hasMultiple()) { items.add(new Menu.ServerChooser()); }
+                items.addAll([
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label), null),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Albums_label), "album"),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Artists_label), "artist"),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Collections_label), "collection"),
 					new Menu.DynamicMixes(),
 				]);
+                return MenuBase.load(items);
 			}
 
 			function sublabel() {
@@ -58,7 +63,11 @@ module Plexit {
 					return null;
 				}
 				RatingStore.reload();
-				var pendingRatings = RatingStore.size();
+                var pendingRatings = 0;
+                var ratingIds = RatingStore.getIds();
+                for (var ratingIdx = 0; ratingIdx < ratingIds.size(); ratingIdx += 1) {
+                    if (PlexServers.isEnabled(PlexSource.serverId(ratingIds[ratingIdx]))) { pendingRatings += 1; }
+                }
 				// A child browse menu can persist a selection from a different
 				// native view context. Always read the latest persisted selection.
 				PlaylistStore.reload();
@@ -69,6 +78,7 @@ module Plexit {
 				var ids = PlaylistStore.getIds();
 				for (var idx = 0; idx < ids.size(); ++idx) {
 					var playlist = new IPlaylist(ids[idx]);
+                    if (playlist.local() && !PlexServers.isEnabled(PlexSource.serverId(playlist.id()))) { continue; }
 					if (playlist.local() && !playlist.synced()) {
 						songs += playlist.count();
 						selections += 1;
@@ -80,7 +90,11 @@ module Plexit {
 
 				// Before playlist metadata is fetched, playlist.count() is the best
 				// estimate. During/after a partial sync, the todo store is exact.
-				var todoSongs = SongStore.getTodos().size();
+                var todoIds = SongStore.getTodos();
+                var todoSongs = 0;
+                for (var todoIdx = 0; todoIdx < todoIds.size(); todoIdx += 1) {
+                    if (PlexServers.isEnabled(PlexSource.serverId(todoIds[todoIdx]))) { todoSongs += 1; }
+                }
 				if (todoSongs > songs) {
 					songs = todoSongs;
 				}

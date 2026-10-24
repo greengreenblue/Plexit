@@ -22,6 +22,7 @@ module Plexit {
         }
 
         function name(id) {
+            id = PlexSource.raw(id);
             if (id.equals("mix:recent-added")) { return WatchUi.loadResource(Rez.Strings.RecentlyAdded_label); }
             if (id.equals("mix:recent-played")) { return WatchUi.loadResource(Rez.Strings.RecentlyPlayed_label); }
             if (id.equals("mix:most-played")) { return WatchUi.loadResource(Rez.Strings.MostPlayed_label); }
@@ -49,6 +50,7 @@ module Plexit {
 
     module Menu {
         class DynamicMixes extends MenuBase {
+            function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
             private var d_ids = [
                 "mix:recent-added",
                 "mix:recent-played",
@@ -64,7 +66,7 @@ module Plexit {
             function load() {
                 var items = [];
                 for (var idx = 0; idx < d_ids.size(); ++idx) {
-                    var id = d_ids[idx];
+                    var id = PlexSource.qualify(Application.Storage.getValue(Storage.PLEX_SERVER_ID), d_ids[idx]);
                     items.add({
                         LABEL => DynamicMix.name(id),
                         SUBLABEL => method(:mixSummary),

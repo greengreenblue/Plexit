@@ -138,4 +138,21 @@
     <string id="RatingsWaiting_one">$1$ Bewertung ausstehend</string>
     <string id="RatingsWaiting_few">$1$ Bewertungen ausstehend</string>
     <string id="RatingsWaiting_many">$1$ Bewertungen ausstehend</string>
+    <string id="PlexServerAddress">Serveradresse</string>
+    <string id="PlexInvalidServerAddress">Gültige HTTPS-Serveradresse ohne Zugangsdaten oder Abfrageparameter eingeben.</string>
+    <string id="PlexServerAddressSaved">Serveradresse gespeichert. Zurückgehen und erneut laden.</string>
+    <string id="MusicServers_label">Musikserver</string>
+    <string id="MusicServer_label">Musikserver auswählen</string>
+    <string id="ServerEnabled_label">Aktiviert</string>
+    <string id="ChooseServer_label">Zum Durchsuchen auswählen</string>
+    <string id="ServerOnline_label">Erreichbar</string>
+    <string id="ServerOffline_label">Offline</string>
+    <string id="ServerUnknown_label">Nicht geprüft</string>
+    <string id="ServerUnavailable_label">Zugriff nicht verfügbar</string>
+    <string id="ServerDisabled_label">Deaktiviert</string>
+    <string id="SyncIncompleteMessage">Einige Titel konnten nicht synchronisiert werden. Erneut versuchen, wenn der Server erreichbar ist.</string>
+    <string id="RefreshServers_label">Serverliste aktualisieren</string>
+    <string id="ServerListUpdated">Serverliste aktualisiert. Zurückgehen und einen Musikserver auswählen.</string>
+    <string id="UseAutomaticAddress">Automatische Adresse verwenden</string>
+    <string id="AutomaticAddressEnabled">Eigene Adresse entfernt. Die Plex-Adressen werden automatisch verwendet.</string>
 </strings>

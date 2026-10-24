@@ -1,4 +1,5 @@
 using Toybox.Lang;
+using Toybox.Application;
 using Toybox.WatchUi;
 using Toybox.Timer;
 
@@ -38,6 +39,7 @@ module Plexit {
             private var d_pageReady = false;
             private var d_searchPending = false;
             private var d_searchTimer = null;
+            private var d_source = null;
 
             function setArtist(id) { d_artist = id; }
 
@@ -127,6 +129,13 @@ module Plexit {
             }
 
             function load() {
+                var source = Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID);
+                if (((d_source == null) && (source != null))
+                    || ((d_source != null) && !d_source.equals(source))) {
+                    resetBrowseState();
+                    d_source = source;
+                    d_provider = Plexit.Provider.get();
+                }
                 if (!PlexAccount.isConnected()) {
                     d_loading = false;
                     return MenuBase.load([]);
@@ -162,6 +171,7 @@ module Plexit {
 
             function managesId(id) {
                 if (!(id instanceof Lang.String)) { return false; }
+                if (!PlexSource.belongsTo(id, d_source)) { return false; }
                 if (d_collectionType == null) {
                     return (id.find("album:") != 0)
 						&& (id.find("artist:") != 0)
@@ -413,8 +423,13 @@ module Plexit {
             function onLoadingBack() { onBrowseBack(); }
 
             function onBrowseBack() {
-                if (d_browser != null) { d_browser.cancel(); d_browser = null; }
                 setOnLoaded(null);
+                resetBrowseState();
+                return false;
+            }
+
+            function resetBrowseState() {
+                if (d_browser != null) { d_browser.cancel(); d_browser = null; }
                 d_pageReady = false;
                 d_searchPending = false;
                 if (d_searchTimer != null) { d_searchTimer.stop(); d_searchTimer = null; }
@@ -430,7 +445,6 @@ module Plexit {
                 d_visibleStart = 0;
                 d_loading = false;
                 unload();
-                return false;
             }
 
             function delegate() {

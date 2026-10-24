@@ -1,6 +1,6 @@
 class ArtworkSync extends Deferrable {
 
-	private var d_provider = Plexit.Provider.get();
+	private var d_provider = null;
 	
 	// private var d_failed = [];		// array of all failed
 	
@@ -14,9 +14,6 @@ class ArtworkSync extends Deferrable {
 		Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 		
 		f_progress = progress;
-		
-        d_provider.setFallback(method(:onError));
-		d_provider.setProgressCallback(method(:onProgress));
 
 		// first delete the todeletes
 		var ids = ArtworkStore.getDeletes();
@@ -54,7 +51,14 @@ class ArtworkSync extends Deferrable {
 		// update progress
 		f_progress.invoke(progress());
 		
-		// start download
+		if (PlexServers.skipSync(PlexSource.serverId(d_todo[0].art_id()))) {
+            d_todo.removeAll(d_todo[0]);
+            return sync();
+        }
+        d_provider = Plexit.Provider.forItem(d_todo[0].art_id());
+        d_provider.setFallback(method(:onError));
+        d_provider.setProgressCallback(method(:onProgress));
+        // start download
 		d_provider.getArtwork(d_todo[0].art_id(), d_todo[0].type(), method(:onDownloaded));
 		return Deferrable.defer();
 	}

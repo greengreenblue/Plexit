@@ -1,6 +1,6 @@
 class AudioSync extends Deferrable {
 
-	private var d_provider = Plexit.Provider.get();
+	private var d_provider = null;
 	private var d_audio = null;		// front of the todos
 	
 	private var d_failed = [];		// array of all failed
@@ -16,9 +16,6 @@ class AudioSync extends Deferrable {
 		Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 		
 		f_progress = progress;
-		
-        d_provider.setFallback(method(:onError));
-		d_provider.setProgressCallback(method(:onProgress));
 
 		// first delete the todeletes
 		var ids = SongStore.getDeletes();
@@ -46,7 +43,7 @@ class AudioSync extends Deferrable {
 		if (d_pendingAudio.size() == 0) {
 			if (d_failed.size() > 0) {
 				System.println("Audio sync failed for " + d_failed.size() + " song(s): " + d_lastError);
-				return Deferrable.cancel(d_lastError);
+				return Deferrable.complete();
 			}
 	   		return Deferrable.complete();				// set complete
 		}
@@ -54,7 +51,15 @@ class AudioSync extends Deferrable {
 		// update progress
 		f_progress.invoke(progress());
 		
-		// start download
+		// Skip this source for the rest of this sync after its connection failed.
+        if (PlexServers.skipSync(PlexSource.serverId(d_pendingAudio[0].id()))) {
+            onError(new Plexit.ApiError(Plexit.ApiError.ACCESS));
+            return Deferrable.defer();
+        }
+        d_provider = Plexit.Provider.forItem(d_pendingAudio[0].id());
+        d_provider.setFallback(method(:onError));
+        d_provider.setProgressCallback(method(:onProgress));
+        // start download
 		d_provider.getRefId(
 			d_pendingAudio[0].id(),
 			d_pendingAudio[0].mime(),

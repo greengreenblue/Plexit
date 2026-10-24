@@ -4,7 +4,7 @@ module Plexit {
 
 	class ScrobbleSync extends Deferrable {
 		
-		private var d_provider = Plexit.Provider.get();
+		private var d_provider = null;
 		
 		private var f_progress;
 		
@@ -17,8 +17,6 @@ module Plexit {
 			Deferrable.initialize(method(:sync), done, fail);		// make sync the deferred task
 			
 			f_progress = progress;
-			
-			d_provider.setFallback(method(:onError));
 		}
 		
 		function sync() {
@@ -32,6 +30,11 @@ module Plexit {
 			// record first play on the list
 			var storage = ScrobbleStore.get(d_idx);
 			d_scrobble = new Scrobble(storage);
+            if (PlexServers.skipSync(PlexSource.serverId(d_scrobble.id()))) {
+                d_idx += 1; d_todo -= 1; return sync();
+            }
+            d_provider = Plexit.Provider.forItem(d_scrobble.id());
+            d_provider.setFallback(method(:onError));
 			d_provider.recordPlay(d_scrobble.id(), d_scrobble.time(), method(:onRecordPlay));
 			return Deferrable.defer();
 		}
@@ -47,38 +50,13 @@ module Plexit {
 			sync();
 		}
 		
-		function onError(error) {
-			// some problem with the network - we can skip this and try again later
-			if ((error instanceof Plexit.HttpError)
-				|| (error instanceof Plexit.GarminSdkError)) {
-				
-				// to prevent unwanted OOM errors, better remove the scrobble
-				onRecordPlay(null);
-				
-				// ideally, save scrobble and continue with next scrobble
-				
-				return;
-			}
-			
-			// Nextcloud has 'missing method' and reports
-			//
-			// if ((error instanceof AmpacheError) 
-			// 		&& (error.code() == AmpacheError.METHOD_MISSING))
-			//
-			// if ((error instanceof SubsonicError)
-			//		&& (error.code() == SubsonicError.NOT_FOUND))
-			//
-			// perform default action
-			
-			// default action is to clear the list 
-			
-			// remove all records, since it is not possible to store them anyways
-			ScrobbleStore.removeAll();
-			
-			// mark complete
-			Deferrable.complete();
-		}
-		
+        function onError(error) {
+            // Retain failed events for their own source; continue other servers.
+            d_idx += 1;
+            d_todo -= 1;
+            sync();
+        }
+
 		function progress() {
 			var done = d_todo_total - d_todo;
 			var progress = (100 * done) / d_todo_total.toFloat();

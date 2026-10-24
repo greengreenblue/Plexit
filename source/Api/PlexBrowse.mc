@@ -6,6 +6,7 @@ using Toybox.System;
 // with the sync provider, and a cancelled response cannot touch a native view.
 class PlexBrowse {
     private var d_api;
+    private var d_source;
     private var d_callback;
     private var d_fallback;
     private var d_cancelled = false;
@@ -23,19 +24,23 @@ class PlexBrowse {
     function initialize(callback, fallback) {
         d_callback = callback;
         d_fallback = fallback;
-        d_api = new PlexAPI(Plexit.Provider.getProviderSettings(), null, method(:onError));
+        var settings = Plexit.Provider.getProviderSettings();
+        d_source = settings["server_id"];
+        d_api = new PlexAPI(settings, null, method(:onError));
     }
 
     function cancel() {
         d_cancelled = true;
+        d_api.cancelRequests();
         d_callback = null;
         d_fallback = null;
     }
 
     function start(type, query, cursor, artist) {
+        if (!d_api.isAvailable()) { onError(new Plexit.ApiError(Plexit.ApiError.ACCESS)); return; }
         d_type = type;
         d_query = query;
-        d_artist = artist;
+        d_artist = PlexSource.raw(artist);
         if (cursor != null) {
             d_section = cursor["section"];
             d_offset = cursor["offset"];
@@ -177,7 +182,7 @@ class PlexBrowse {
         if (count == null) { count = item["childCount"]; }
         if (count == null) { count = 0; }
         return new Playlist({
-            "id" => (type == null) ? item["ratingKey"].toString() : type + ":" + item["ratingKey"],
+            "id" => PlexSource.qualify(d_source, (type == null) ? item["ratingKey"].toString() : type + ":" + item["ratingKey"]),
             "name" => item["title"],
             "subtitle" => isType(type, "album") ? item["parentTitle"] : null,
             "songCount" => count.toNumber(),

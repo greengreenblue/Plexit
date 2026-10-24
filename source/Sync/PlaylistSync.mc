@@ -1,6 +1,6 @@
 class PlaylistSync extends Deferrable {
 
-	private var d_provider = Plexit.Provider.get();
+	private var d_provider = null;
 	private var d_iplaylist;	
 	
 	private var d_failed = false;	// true if anything failed
@@ -12,13 +12,17 @@ class PlaylistSync extends Deferrable {
 		
 		f_progress = progress;
 		
-        d_provider.setFallback(method(:onError));
-		d_provider.setProgressCallback(method(:onProgress));
-        
 		d_iplaylist = new IPlaylist(id);
+        d_provider = Plexit.Provider.forItem(id);
+        d_provider.setFallback(method(:onError));
+        d_provider.setProgressCallback(method(:onProgress));
 	}
 	
 	function sync() {
+        if (d_iplaylist.local() && PlexServers.skipSync(PlexSource.serverId(d_iplaylist.id()))) {
+            d_iplaylist.setSynced(false);
+            return Deferrable.complete();
+        }
 		// if desired local, update playlist info
     	if (d_iplaylist.local()) {
 			d_provider.getPlaylist(d_iplaylist.id(), method(:onGetPlaylist));
@@ -115,7 +119,8 @@ class PlaylistSync extends Deferrable {
 			return;
 		}
 
-		Deferrable.cancel(error);
+        // A failed server must not cancel updates from the other sources.
+		Deferrable.complete();
 		return;
     }
 }
