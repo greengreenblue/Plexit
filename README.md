@@ -35,9 +35,13 @@ Garmin's built-in music player — without carrying your phone.
   information and individual download deletion.
 - **Plex updates.** Playback records and pending ratings are sent back to Plex
   during synchronization, subject to the device limitations below.
-- **Multiple languages.** English, Slovak, Czech and German, selected
-  automatically from the watch's language setting. More languages are planned
-  for upcoming updates.
+- Support for **multiple Plex servers**, including shared servers.
+- Automatic switching between Plex server addresses.
+- Set a **custom Plex server address**, useful when you have remote Plex server
+  and also need to connect to it locally.
+- **Multiple languages.** English, Slovak, Czech, German, Polish and Spanish,
+  selected automatically from the watch's language setting. More languages
+  are planned for upcoming updates.
 
 ## Setup and usage
 
