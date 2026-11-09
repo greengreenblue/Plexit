@@ -5,6 +5,16 @@ using Toybox.System;
 using Toybox.Timer;
 using Toybox.WatchUi;
 
+// Bind each probe response to its attempt so timed-out requests cannot
+// select the candidate belonging to a newer request.
+class PlexLoginProbe {
+    private var d_view;
+    private var d_attempt;
+    function initialize(view, attempt) { d_view = view; d_attempt = attempt; }
+    function response(code, data) { d_view.onProbeResponse(d_attempt, code, data); }
+    function expired() { response(Communications.NETWORK_REQUEST_TIMED_OUT, null); }
+}
+
 class PlexLoginView extends TextView {
     private var d_pinId = null;
     private var d_code = null;
@@ -17,6 +27,8 @@ class PlexLoginView extends TextView {
     private var d_triedUris = [];
     private var d_active = false;
     private var d_refreshOnly = false;
+    private var d_probeTimer = null;
+    private var d_probeAttempt = 0;
 
     function refreshServers() {
         d_active = true;
@@ -32,8 +44,14 @@ class PlexLoginView extends TextView {
 
     function onShow() {
         d_active = true;
-        if (d_pinId == null) {
+        var token = Application.Storage.getValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+        if ((token != null) && !PlexAccount.isConnected()) {
+            setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
+            discoverServers(token);
+        } else if (d_pinId == null) {
             requestPin();
+        } else {
+            startPolling();
         }
     }
 
@@ -43,10 +61,14 @@ class PlexLoginView extends TextView {
         d_accountToken = null;
         d_candidate = null;
         stopPolling();
+        stopProbe();
         Communications.cancelAllRequests();
     }
 
     function requestPin() {
+        d_pinId = null;
+        d_code = null;
+        d_pollCount = 0;
         var options = {
             :method => Communications.HTTP_REQUEST_METHOD_POST,
             :headers => PlexAccount.headers(null),
@@ -63,6 +85,7 @@ class PlexLoginView extends TextView {
     }
 
     function onPinCreated(responseCode, data) {
+        if (!d_active) { return; }
         if ((responseCode != 200) && (responseCode != 201)) {
             showError(WatchUi.loadResource(Rez.Strings.PlexLoginFailed), responseCode);
             return;
@@ -86,12 +109,17 @@ class PlexLoginView extends TextView {
             );
         }
 
+        startPolling();
+    }
+
+    function startPolling() {
+        stopPolling();
         d_pollTimer = new Timer.Timer();
         d_pollTimer.start(method(:pollPin), 3000, true);
     }
 
     function pollPin() {
-        if (d_polling || (d_pinId == null)) {
+        if (!d_active || d_polling || (d_pinId == null)) {
             return;
         }
         d_pollCount += 1;
@@ -115,7 +143,10 @@ class PlexLoginView extends TextView {
     }
 
     function onPinPolled(responseCode, data) {
+        if (!d_active) { return; }
         d_polling = false;
+        // Keep the same code after a temporary phone/network outage.
+        if (PlexServerRequest.canRetry(responseCode) || (responseCode == 429)) { return; }
         if (responseCode != 200) {
             showError(WatchUi.loadResource(Rez.Strings.PlexLoginCheckFailed), responseCode);
             return;
@@ -126,10 +157,12 @@ class PlexLoginView extends TextView {
         }
 
         var token = data["authToken"];
-        if (token == null) {
+        if (!(token instanceof Lang.String) || (token.length() == 0)) {
             return;
         }
 
+        // Authorization succeeds independently of server reachability.
+        Application.Storage.setValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN, token);
         stopPolling();
         setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
         discoverServers(token);
@@ -154,6 +187,13 @@ class PlexLoginView extends TextView {
     }
 
     function onServersDiscovered(responseCode, data, accountToken) {
+        if (!d_active) { return; }
+        if ((responseCode == 401) || (responseCode == 403)) {
+            Application.Storage.deleteValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+            d_refreshOnly = false;
+            requestPin();
+            return;
+        }
         if (responseCode != 200) {
             showError(WatchUi.loadResource(Rez.Strings.ServerDiscoveryFailed), responseCode);
             return;
@@ -196,8 +236,13 @@ class PlexLoginView extends TextView {
         }
 
         d_triedUris.add(d_candidate["uri"]);
+        System.println("Plex connection probe: " + d_candidate["uri"] + "/library/sections");
         // Discovery advertises addresses; it does not prove they are reachable
         // from this phone/watch. Probe with the server token before saving one.
+        d_probeAttempt += 1;
+        var probe = new PlexLoginProbe(self, d_probeAttempt);
+        d_probeTimer = new Timer.Timer();
+        d_probeTimer.start(probe.method(:expired), 8000, false);
         Communications.makeWebRequest(
             d_candidate["uri"] + "/library/sections",
             null,
@@ -206,15 +251,27 @@ class PlexLoginView extends TextView {
                 :headers => PlexAccount.headers(d_candidate["token"]),
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
             },
-            method(:onServerConnectionChecked)
+            probe.method(:response)
         );
+    }
+
+    function stopProbe() {
+        d_probeAttempt += 1;
+        if (d_probeTimer != null) { d_probeTimer.stop(); d_probeTimer = null; }
+    }
+
+    function onProbeResponse(attempt, code, data) {
+        if (!d_active || (attempt != d_probeAttempt)) { return; }
+        stopProbe();
+        onServerConnectionChecked(code, data);
     }
 
     function onServerConnectionChecked(responseCode, data) {
         if (!d_active) { return; }
         if ((responseCode != 200) || !(data instanceof Lang.Dictionary)
             || !(data["MediaContainer"] instanceof Lang.Dictionary)) {
-            System.println("Plex connection probe failed: " + responseCode);
+            System.println("Plex connection probe failed: " + responseCode + " at "
+                + ((d_candidate != null) ? d_candidate["uri"] : "unknown") + "/library/sections");
             tryServerConnection();
             return;
         }
@@ -225,6 +282,7 @@ class PlexLoginView extends TextView {
             return;
         }
 
+        System.println("Plex connection probe succeeded: " + selected["uri"] + "/library/sections");
         PlexAccount.saveServer(
             selected["name"],
             selected["uri"],

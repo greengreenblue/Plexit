@@ -195,3 +195,47 @@ function legacySingleAddressStillWorks(logger) {
     var urls = PlexAccount.orderedConnectionUrls(null, "https://legacy", "https://legacy", null);
     return (urls.size() == 1) && urls[0].equals("https://legacy");
 }
+
+(:test)
+class LoginFlowProbe extends PlexLoginView {
+    var pins = 0;
+    var discoveredToken = null;
+    var errors = 0;
+    function initialize() { PlexLoginView.initialize(); }
+    function requestPin() { pins += 1; }
+    function discoverServers(token) { discoveredToken = token; }
+    function setText(text) {}
+    function showError(message, code) { errors += 1; }
+}
+
+(:test)
+function authorizedAccountSurvivesUnreachableServer(logger) {
+    var state = new MultiServerTestState();
+    Toybox.Application.Storage.deleteValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+    Toybox.Application.Storage.deleteValue(Plexit.Storage.PLEX_SERVER_URL);
+    var login = new LoginFlowProbe();
+    login.onShow();
+    login.onPinPolled(200, { "authToken" => "authorized-test-token" });
+    var retry = new LoginFlowProbe();
+    retry.onShow();
+    var passed = (login.pins == 1) && (retry.pins == 0)
+        && "authorized-test-token".equals(retry.discoveredToken)
+        && !PlexAccount.isConnected();
+    state.restore();
+    return passed;
+}
+
+(:test)
+function temporaryPinPollingFailureCanStillAuthorize(logger) {
+    var state = new MultiServerTestState();
+    Toybox.Application.Storage.deleteValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+    var login = new LoginFlowProbe();
+    login.onShow();
+    login.onPinPolled(Toybox.Communications.BLE_HOST_TIMEOUT, null);
+    login.onPinPolled(503, null);
+    login.onPinPolled(200, { "authToken" => "authorized-test-token" });
+    var passed = (login.errors == 0)
+        && "authorized-test-token".equals(login.discoveredToken);
+    state.restore();
+    return passed;
+}

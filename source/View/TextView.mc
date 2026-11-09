@@ -37,13 +37,13 @@
     
     function setText(msg) {
     	d_msg = msg;
-    	d_textarea.setText(d_msg);
+        if (d_textarea != null) { d_textarea.setText(d_msg); }
     	WatchUi.requestUpdate(); // TODO test if requestUpdate is required
     }
     
     function appendText(msg) {
     	d_msg += msg;
-    	d_textarea.setText(d_msg);
+        if (d_textarea != null) { d_textarea.setText(d_msg); }
     	WatchUi.requestUpdate(); // TODO test if requestUpdate is required
     }
 }
