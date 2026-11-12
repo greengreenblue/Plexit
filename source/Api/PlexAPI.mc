@@ -90,7 +90,7 @@ class PlexAPI extends Api {
 		d_options[:headers].put("X-Plex-Client-Identifier", PlexAccount.clientId());
 		d_options[:headers].put("X-Plex-Platform", "Garmin Connect IQ");
 		d_options[:headers].put("X-Plex-Device", "Garmin Watch");
-		d_options[:headers].put("X-Plex-Device-Name", System.getDeviceSettings().partNumber);
+		d_options[:headers].put("X-Plex-Device-Name", "Plexit (Garmin)");
     }
 
     function identity(callback) {

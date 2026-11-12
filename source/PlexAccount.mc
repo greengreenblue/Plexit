@@ -32,7 +32,7 @@ module PlexAccount {
             "X-Plex-Client-Identifier" => clientId(),
             "X-Plex-Platform" => "Garmin Connect IQ",
             "X-Plex-Device" => "Garmin Watch",
-            "X-Plex-Device-Name" => System.getDeviceSettings().partNumber,
+            "X-Plex-Device-Name" => "Plexit (Garmin)",
         };
         if (token != null) {
             values.put("X-Plex-Token", token);
