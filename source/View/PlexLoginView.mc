@@ -10,9 +10,25 @@ using Toybox.WatchUi;
 class PlexLoginProbe {
     private var d_view;
     private var d_attempt;
-    function initialize(view, attempt) { d_view = view; d_attempt = attempt; }
-    function response(code, data) { d_view.onProbeResponse(d_attempt, code, data); }
-    function expired() { response(Communications.NETWORK_REQUEST_TIMED_OUT, null); }
+    private var d_started;
+    private var d_expired = false;
+    function initialize(view, attempt) {
+        d_view = view;
+        d_attempt = attempt;
+        d_started = System.getTimer();
+    }
+    function response(code, data) {
+        System.println("Plex probe #" + d_attempt + " Garmin response: " + code
+            + " after " + (System.getTimer() - d_started) + " ms"
+            + (d_expired ? " (late; app deadline already expired)" : ""));
+        d_view.onProbeResponse(d_attempt, code, data);
+    }
+    function expired() {
+        d_expired = true;
+        System.println("Plex probe #" + d_attempt + " app deadline expired after "
+            + (System.getTimer() - d_started) + " ms; reporting -300");
+        d_view.onProbeResponse(d_attempt, Communications.NETWORK_REQUEST_TIMED_OUT, null);
+    }
 }
 
 class PlexLoginView extends TextView {
@@ -240,6 +256,7 @@ class PlexLoginView extends TextView {
         // Discovery advertises addresses; it does not prove they are reachable
         // from this phone/watch. Probe with the server token before saving one.
         d_probeAttempt += 1;
+        System.println("Plex probe #" + d_probeAttempt + " started; app deadline: 8000 ms");
         var probe = new PlexLoginProbe(self, d_probeAttempt);
         d_probeTimer = new Timer.Timer();
         d_probeTimer.start(probe.method(:expired), 8000, false);
