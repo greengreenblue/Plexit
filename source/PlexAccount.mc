@@ -28,7 +28,7 @@ module PlexAccount {
         var values = {
             "Accept" => "application/json",
             "X-Plex-Product" => "Plexit",
-            "X-Plex-Version" => "0.5.0",
+            "X-Plex-Version" => (new PlexitVersion(null)).toString(),
             "X-Plex-Client-Identifier" => clientId(),
             "X-Plex-Platform" => "Garmin Connect IQ",
             "X-Plex-Device" => "Garmin Watch",

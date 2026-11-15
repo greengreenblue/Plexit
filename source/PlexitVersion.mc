@@ -1,7 +1,7 @@
 class PlexitVersion {
 
 	private var d_major = 0;
-	private var d_minor = 5;
+	private var d_minor = 6;
 	private var d_patch = 0;
 	private var d_name = "";
 
