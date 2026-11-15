@@ -170,4 +170,5 @@
     <string id="ConnectionStepDeadline">Další krok nejpozději za $1$ s.\nZpět = zrušit</string>
     <string id="ConnectionCancelling">Zastavuji…\nDalší krok do $1$ s.\nZpět = zrušit</string>
     <string id="ConnectionCancelFailed">Garmin nepotvrdil zrušení. Ukončete a zkuste znovu.</string>
+    <string id="ConnectedServerCount">Připojené servery: $1$ z $2$.</string>
 </strings>

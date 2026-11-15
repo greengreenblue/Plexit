@@ -317,7 +317,7 @@ function multipleServersPreserveExplicitSelection(logger) {
             && PlexServers.preferredServer(records, "test-server-b").equals("test-server-b");
         var menu = new Plexit.Menu.AddMusic();
         menu.load();
-        ok = ok && menu.getItem(1).getLabel().equals(Toybox.WatchUi.loadResource(Rez.Strings.MusicServer_label));
+        ok = ok && menu.getItem(1).getLabel().equals(Toybox.WatchUi.loadResource(Rez.Strings.Playlists_label));
     } catch (error) { logger.debug(error.toString()); }
     state.restore();
     return ok;

@@ -105,6 +105,11 @@ saved Plex connection and downloaded music, so you will need to link again.
   local/remote numbering and a bounded countdown (2 seconds for local addresses,
   8 for remote, followed by at most 5 seconds to acknowledge cancellation).
   Existing compatibility preferences are preserved during migration.
+  Each server is connected independently: an unavailable share does not undo a
+  successful connection to another server. The final screen reports how many
+  servers connected, and failed servers remain listed as offline. Internet-only
+  servers do not offer a redundant internet-only retry. Choose the browsing
+  server in its detailed settings; enabling servers for sync is a separate choice.
 - **Transcoded download progress is estimated when the size is unknown.** The
   estimate uses track duration and target bitrate and advances with received
   bytes, capped at 95% of the track until it completes. Metadata refresh alone

@@ -170,4 +170,5 @@
     <string id="ConnectionStepDeadline">Siguiente paso en un máximo de $1$ s.\nAtrás = cancelar</string>
     <string id="ConnectionCancelling">Deteniendo…\nPaso en un máximo de $1$ s.\nAtrás = cancelar</string>
     <string id="ConnectionCancelFailed">Garmin no confirmó la cancelación. Sal y reintenta.</string>
+    <string id="ConnectedServerCount">Servidores conectados: $1$ de $2$.</string>
 </strings>

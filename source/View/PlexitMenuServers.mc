@@ -54,42 +54,6 @@ module Plexit {
             return WatchUi.loadResource(Rez.Strings.ServerUnknown_label);
         }
 
-        class ServerChooser extends MenuBase {
-            function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
-            function initialize() {
-                MenuBase.initialize(WatchUi.loadResource(Rez.Strings.MusicServer_label), false);
-            }
-            function sublabel() { return Application.Storage.getValue(Storage.PLEX_SERVER_NAME); }
-            function load() {
-                var records = PlexServers.all();
-                var items = [];
-                var current = Application.Storage.getValue(Storage.PLEX_SERVER_ID);
-                for (var i = 0; i < records.size(); i += 1) {
-                    var record = records[i];
-                    items.add({ LABEL => record["name"], SUBLABEL => serverStatus(record),
-                        METHOD => record["id"], OPTION => record["id"].equals(current) });
-                }
-                if (records.size() == 0) {
-                    items.add({ LABEL => WatchUi.loadResource(Rez.Strings.PlexSignIn),
-                        SUBLABEL => null, METHOD => method(:signIn) });
-                }
-                return MenuBase.load(items);
-            }
-            function signIn() {
-                WatchUi.pushView(new PlexLoginView(), new WatchUi.BehaviorDelegate(), WatchUi.SLIDE_IMMEDIATE);
-            }
-            function onSelect(item) {
-                var record = PlexServers.get(item.getId());
-                if (record == null) { return; }
-                record["enabled"] = true;
-                PlexServers.save(record);
-                PlexServers.select(record["id"]);
-                unload();
-                WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
-            }
-            function delegate() { return new MenuDelegate(method(:onSelect), null); }
-        }
-
         class MusicServers extends MenuBase {
             function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
             function initialize() {

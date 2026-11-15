@@ -47,6 +47,9 @@ class PlexLoginView extends TextView {
     private var d_setupToken = null;
     private var d_setupIds = [];
     private var d_setupIndex = 0;
+    private var d_currentServerId = null;
+    private var d_connectedIds = [];
+    private var d_originalServerId = null;
     private var d_pinId = null;
     private var d_code = null;
     private var d_pollTimer = null;
@@ -276,11 +279,20 @@ class PlexLoginView extends TextView {
             var r = resources[i];
             if (!(r instanceof Lang.Dictionary)) { continue; }
             var record = PlexServers.get(r["clientIdentifier"]);
-            if ((record != null) && (record["token"] != null) && (record["connectionModeChosen"] != true)) {
+            if ((record != null) && (record["token"] != null) && (record["enabled"] != false)) {
                 d_setupIds.add(record["id"]);
             }
         }
         d_setupIndex = 0;
+        d_connectedIds = [];
+        d_originalServerId = Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID);
+        // Keep the user's current browsing server when it is reachable.
+        if ((d_originalServerId != null) && (d_setupIds.indexOf(d_originalServerId) > 0)) {
+            d_setupIds.remove(d_originalServerId);
+            var ordered = [d_originalServerId];
+            ordered.addAll(d_setupIds);
+            d_setupIds = ordered;
+        }
         d_setupResources = resources;
         d_setupToken = accountToken;
         d_setupWaiting = true;
@@ -290,18 +302,44 @@ class PlexLoginView extends TextView {
     function continueConnectionSetup() {
         stopRetryTimer();
         d_active = true;
-        if (d_setupIndex < d_setupIds.size()) {
-            var name = PlexServers.name(d_setupIds[d_setupIndex]);
-            showHomeNetworkQuestion(name);
+        if (d_setupIndex >= d_setupIds.size()) { finishServerSetup(); return; }
+        d_currentServerId = d_setupIds[d_setupIndex];
+        var record = PlexServers.get(d_currentServerId);
+        d_resources = d_setupResources;
+        d_accountToken = d_setupToken;
+        if ((record != null) && (record["connectionModeChosen"] != true)) {
+            d_setupWaiting = true;
+            showHomeNetworkQuestion(record["name"]);
             return;
         }
         d_setupWaiting = false;
-        d_resources = d_setupResources;
-        d_accountToken = d_setupToken;
+        d_triedUris = [];
+        d_offerServer = d_currentServerId;
+        tryServerConnection();
+    }
+
+    function advanceServerSetup() {
+        d_setupIndex += 1;
+        d_internetTrialServer = null;
+        d_candidate = null;
+        d_retryTimer = new Timer.Timer();
+        d_retryTimer.start(method(:continueConnectionSetup), 100, false);
+    }
+
+    function finishServerSetup() {
+        d_setupWaiting = false;
+        d_currentServerId = null;
+        d_resources = null;
+        d_accountToken = null;
         d_setupResources = null;
         d_setupToken = null;
-        d_triedUris = [];
-        tryServerConnection();
+        if (d_connectedIds.size() == 0) {
+            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
+        } else if (d_setupIds.size() == 1) {
+            setText(Plexit.I18n.text(Rez.Strings.ConnectedPlex, [PlexServers.name(d_connectedIds[0])]));
+        } else {
+            setText(Plexit.I18n.text(Rez.Strings.ConnectedServerCount, [d_connectedIds.size(), d_setupIds.size()]));
+        }
     }
 
     function showHomeNetworkQuestion(name) {
@@ -313,7 +351,6 @@ class PlexLoginView extends TextView {
     function onHomeNetworkChoice(home) {
         PlexServers.setConnectionMode(d_setupIds[d_setupIndex], home
             ? PlexServers.CONNECTION_AUTO : PlexServers.CONNECTION_INTERNET);
-        d_setupIndex += 1;
         d_retryTimer = new Timer.Timer();
         d_retryTimer.start(method(:continueConnectionSetup), 100, false);
     }
@@ -346,12 +383,19 @@ class PlexLoginView extends TextView {
         setText(Plexit.I18n.text(Rez.Strings.ConnectionRecovering, [remaining]));
     }
 
+    function showInternetQuestion(name) {
+        if (name.length() > 18) { name = name.substring(0, 17) + "…"; }
+        WatchUi.pushView(new WatchUi.Confirmation(name + "\n" + WatchUi.loadResource(Rez.Strings.TryInternetConnection)),
+            new PlexInternetConfirmation(self), WatchUi.SLIDE_IMMEDIATE);
+    }
+
     function onInternetChoice(enabled) {
         d_confirmationOpen = false;
         d_confirmationHandled = true;
         d_active = true;
         if (!enabled) {
-            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
+            PlexServers.status(d_currentServerId, "offline");
+            advanceServerSetup();
             return;
         }
         d_internetTrialServer = d_offerServer;
@@ -367,6 +411,13 @@ class PlexLoginView extends TextView {
     function restartConnection() {
         stopRetryTimer();
         if (!d_active) { return; }
+        if ((d_internetTrialServer != null) && (d_setupResources != null)) {
+            d_resources = d_setupResources;
+            d_accountToken = d_setupToken;
+            d_triedUris = [];
+            tryServerConnection();
+            return;
+        }
         var token = Application.Storage.getValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
         if (token == null) { requestPin(); return; }
         setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
@@ -442,14 +493,13 @@ class PlexLoginView extends TextView {
         if (!d_active) { return; }
         d_candidate = selectServer(d_resources, d_triedUris);
         if (d_candidate == null) {
-            d_resources = null;
-            d_accountToken = null;
-            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
-            if ((d_internetTrialServer == null) && (d_offerServer != null)
-                && connectionModeFor(d_offerServer).equals(PlexServers.CONNECTION_AUTO)) {
+            if ((d_internetTrialServer == null) && (d_currentServerId != null)
+                && connectionModeFor(d_currentServerId).equals(PlexServers.CONNECTION_AUTO)) {
                 d_confirmationOpen = true;
-                WatchUi.pushView(new WatchUi.Confirmation(WatchUi.loadResource(Rez.Strings.TryInternetConnection)),
-                    new PlexInternetConfirmation(self), WatchUi.SLIDE_IMMEDIATE);
+                showInternetQuestion(PlexServers.name(d_currentServerId));
+            } else {
+                PlexServers.status(d_currentServerId, "offline");
+                advanceServerSetup();
             }
             return;
         }
@@ -516,25 +566,31 @@ class PlexLoginView extends TextView {
         }
 
         Plexit.Utils.log("Plex connection probe succeeded: " + selected["uri"] + "/library/sections");
-        PlexAccount.saveServer(
-            selected["name"],
-            selected["uri"],
-            selected["token"],
-            d_accountToken,
-            selected["artworkUri"],
-            selected["urls"],
-            selected["serverId"]
-        );
+        if ((d_connectedIds.size() == 0) || ((d_originalServerId != null)
+            && d_originalServerId.equals(selected["serverId"]))) {
+            PlexAccount.saveServer(
+                selected["name"],
+                selected["uri"],
+                selected["token"],
+                d_accountToken,
+                selected["artworkUri"],
+                selected["urls"],
+                selected["serverId"]
+            );
+        } else {
+            var record = PlexServers.get(selected["serverId"]);
+            record["uri"] = selected["uri"];
+            record["status"] = "online";
+            PlexServers.save(record);
+        }
         if ((d_internetTrialServer != null) && d_internetTrialServer.equals(selected["serverId"])) {
             PlexServers.setConnectionMode(selected["serverId"], PlexServers.CONNECTION_INTERNET);
             d_internetTrialServer = null;
         }
         Plexit.Utils.log("Plex artwork connection: "
             + ((selected["artworkUri"] != null) ? selected["artworkUri"] : "none; using local fallback"));
-        setText(Plexit.I18n.text(Rez.Strings.ConnectedPlex, [selected["name"]]));
-        d_resources = null;
-        d_accountToken = null;
-        d_candidate = null;
+        d_connectedIds.add(selected["serverId"]);
+        advanceServerSetup();
     }
 
     function selectServer(resources, triedUris) {
@@ -551,6 +607,7 @@ class PlexLoginView extends TextView {
             }
 
             var id = resource["clientIdentifier"];
+            if ((d_currentServerId != null) && ((id == null) || !id.equals(d_currentServerId))) { continue; }
             if ((d_internetTrialServer != null) && ((id == null) || !id.equals(d_internetTrialServer))) { continue; }
             var mode = connectionModeFor(id);
             var ownedPenalty = (resource["owned"] == true) ? 0 : 100;

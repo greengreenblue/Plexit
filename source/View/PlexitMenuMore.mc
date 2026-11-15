@@ -22,7 +22,6 @@ module Plexit {
 						METHOD => method(:onStartSync),
 					},
                 ];
-                if (PlexServers.hasMultiple()) { items.add(new Menu.ServerChooser()); }
                 items.addAll([
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Playlists_label), null),
 					new Menu.PlaylistsRemoteToggle(WatchUi.loadResource(Rez.Strings.Albums_label), "album"),

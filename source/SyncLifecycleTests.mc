@@ -1,3 +1,5 @@
+using Toybox.Application;
+
 (:test)
 class DownloadProgressProbe extends Api {
     var values = [];
@@ -107,6 +109,7 @@ class LoginDeadlineProbe extends PlexLoginView {
     var acknowledgeCancel = true;
     var errors = 0;
     var questions = 0;
+    var internetQuestions = 0;
     var text = "";
     function initialize() { PlexLoginView.initialize(); }
     function requestPin() {}
@@ -115,6 +118,7 @@ class LoginDeadlineProbe extends PlexLoginView {
     function setText(value) { text = value; }
     function showError(message, code) { errors += 1; }
     function showHomeNetworkQuestion(name) { questions += 1; }
+    function showInternetQuestion(name) { internetQuestions += 1; }
     function sendProbe(uri, token, callback) { sent.add(uri); reply = callback; }
     function cancelLoginRequests() {
         cancellations += 1;
@@ -195,4 +199,69 @@ function newServerAsksBeforeSendingAndNoSelectsInternetOnly(logger) {
     login.onHide();
     state.restore();
     return before && after;
+}
+
+(:test)
+class TwoServerLoginFixture {
+    static function resources() {
+        return [DeadlineTestFixture.resources()[0], {
+            "name" => "Offline share", "clientIdentifier" => "second-server",
+            "provides" => "server", "owned" => false, "accessToken" => "second-token",
+            "connections" => [
+                {"uri" => "https://second-remote", "protocol" => "https", "local" => false},
+                {"uri" => "https://second-relay", "protocol" => "https", "local" => false, "relay" => true}
+            ]}];
+    }
+    static function prepare(login, resources, secondMode) {
+        login.rememberDiscoveredServers(resources);
+        PlexServers.setConnectionMode("deadline-server", PlexServers.CONNECTION_AUTO);
+        PlexServers.setConnectionMode("second-server", secondMode);
+        login.onShow();
+        login.onServersDiscovered(200, resources, "account-token");
+        login.reply.invoke(200, {"MediaContainer" => {}});
+        login.continueConnectionSetup();
+        login.reply.invoke(Toybox.Communications.NETWORK_REQUEST_TIMED_OUT, null);
+        login.continueProbe();
+        login.reply.invoke(Toybox.Communications.NETWORK_REQUEST_TIMED_OUT, null);
+        login.continueProbe();
+    }
+}
+
+(:test)
+function offlineInternetOnlyShareKeepsWorkingServerWithoutRepeatQuestion(logger) {
+    var state = new MultiServerTestState();
+    var login = new LoginDeadlineProbe();
+    TwoServerLoginFixture.prepare(login, TwoServerLoginFixture.resources(), PlexServers.CONNECTION_INTERNET);
+    login.continueConnectionSetup();
+    var first = PlexServers.get("deadline-server");
+    var second = PlexServers.get("second-server");
+    var ok = (login.errors == 0) && (login.internetQuestions == 0) && (login.sent.size() == 3)
+        && first["status"].equals("online") && second["status"].equals("offline")
+        && Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID).equals("deadline-server");
+    login.onHide();
+    state.restore();
+    return ok;
+}
+
+(:test)
+function internetRetryIsRestrictedToFailedServerAndPreservesFirstSuccess(logger) {
+    var state = new MultiServerTestState();
+    var login = new LoginDeadlineProbe();
+    TwoServerLoginFixture.prepare(login, TwoServerLoginFixture.resources(), PlexServers.CONNECTION_AUTO);
+    var offered = (login.internetQuestions == 1);
+    login.onInternetChoice(true);
+    login.now += 60000;
+    login.waitForConnection();
+    var scoped = (login.sent.size() == 4) && login.sent[3].equals("https://second-remote");
+    login.reply.invoke(200, {"MediaContainer" => {}});
+    login.continueConnectionSetup();
+    var ok = offered && scoped && (login.errors == 0)
+        && PlexServers.connectionMode(PlexServers.get("second-server")).equals(PlexServers.CONNECTION_INTERNET)
+        && PlexServers.connectionMode(PlexServers.get("deadline-server")).equals(PlexServers.CONNECTION_AUTO)
+        && Application.Storage.getValue(Plexit.Storage.PLEX_SERVER_ID).equals("deadline-server")
+        && PlexServers.get("deadline-server")["status"].equals("online")
+        && PlexServers.get("second-server")["status"].equals("online");
+    login.onHide();
+    state.restore();
+    return ok;
 }

@@ -170,4 +170,5 @@
     <string id="ConnectionStepDeadline">Next step within $1$ s.\nBack = cancel</string>
     <string id="ConnectionCancelling">Stopping request…\nNext step within $1$ s.\nBack = cancel</string>
     <string id="ConnectionCancelFailed">Garmin did not confirm cancellation. Exit and retry.</string>
+    <string id="ConnectedServerCount">Connected servers: $1$ of $2$.</string>
 </strings>
