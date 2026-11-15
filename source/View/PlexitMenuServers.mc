@@ -4,6 +4,41 @@ using Plexit.Storage;
 
 module Plexit {
     module Menu {
+        function connectionModeLabel(mode) {
+            if (mode.equals(PlexServers.CONNECTION_INTERNET)) { return WatchUi.loadResource(Rez.Strings.ConnectionInternet); }
+            if (mode.equals(PlexServers.CONNECTION_COMPATIBILITY)) { return WatchUi.loadResource(Rez.Strings.ConnectionAutomaticCompatibility); }
+            return WatchUi.loadResource(Rez.Strings.ConnectionAutomatic);
+        }
+
+        class ServerConnectionMode extends MenuBase {
+            private var d_id;
+            function initialize(id) {
+                d_id = id;
+                MenuBase.initialize(WatchUi.loadResource(Rez.Strings.ServerConnectionMode), false);
+            }
+            function getItem(idx) { if (idx == 0) { load(); } return MenuBase.getItem(idx); }
+            function sublabel() { return connectionModeLabel(PlexServers.connectionMode(PlexServers.get(d_id))); }
+            function load() {
+                var mode = PlexServers.connectionMode(PlexServers.get(d_id));
+                return MenuBase.load([
+                    { LABEL => WatchUi.loadResource(Rez.Strings.ConnectionAutomatic),
+                        SUBLABEL => WatchUi.loadResource(Rez.Strings.ConnectionAutomaticHelp),
+                        METHOD => PlexServers.CONNECTION_AUTO, OPTION => mode.equals(PlexServers.CONNECTION_AUTO) },
+                    { LABEL => WatchUi.loadResource(Rez.Strings.ConnectionAutomaticCompatibility),
+                        SUBLABEL => WatchUi.loadResource(Rez.Strings.ConnectionCompatibilityHelp),
+                        METHOD => PlexServers.CONNECTION_COMPATIBILITY, OPTION => mode.equals(PlexServers.CONNECTION_COMPATIBILITY) },
+                    { LABEL => WatchUi.loadResource(Rez.Strings.ConnectionInternet),
+                        SUBLABEL => WatchUi.loadResource(Rez.Strings.ConnectionInternetHelp),
+                        METHOD => PlexServers.CONNECTION_INTERNET, OPTION => mode.equals(PlexServers.CONNECTION_INTERNET) }
+                ]);
+            }
+            function onSelect(item) {
+                PlexServers.setConnectionMode(d_id, item.getId());
+                WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            }
+            function delegate() { return new MenuDelegate(method(:onSelect), null); }
+        }
+
         function clearServerAddress(id) {
             var cleared = PlexAccount.clearServerAddressFor(id);
             WatchUi.pushView(new TextView(WatchUi.loadResource(cleared
@@ -66,10 +101,13 @@ module Plexit {
                 for (var i = 0; i < records.size(); i += 1) {
                     items.add(new ServerSettings(records[i]["id"]));
                 }
-                items.add({ LABEL => WatchUi.loadResource(Rez.Strings.PlexSignIn),
-                    SUBLABEL => null, METHOD => method(:signIn) });
-                items.add({ LABEL => WatchUi.loadResource(Rez.Strings.RefreshServers_label),
-                    SUBLABEL => null, METHOD => method(:refresh) });
+                if (records.size() == 0) {
+                    items.add({ LABEL => WatchUi.loadResource(Rez.Strings.PlexSignIn),
+                        SUBLABEL => null, METHOD => method(:signIn) });
+                } else {
+                    items.add({ LABEL => WatchUi.loadResource(Rez.Strings.RefreshServers_label),
+                        SUBLABEL => null, METHOD => method(:refresh) });
+                }
                 return MenuBase.load(items);
             }
             function signIn() {
@@ -94,17 +132,22 @@ module Plexit {
             function load() {
                 var record = PlexServers.get(d_id);
                 if (record == null) { return MenuBase.load([]); }
-                return MenuBase.load([
+                var items = [
+                    new ServerConnectionMode(d_id),
                     { LABEL => WatchUi.loadResource(Rez.Strings.ServerEnabled_label),
                         SUBLABEL => null, METHOD => method(:toggleEnabled), OPTION => record["enabled"] != false },
                     { LABEL => WatchUi.loadResource(Rez.Strings.ChooseServer_label),
-                        SUBLABEL => record["name"], METHOD => method(:choose) },
+                        SUBLABEL => null, METHOD => method(:choose),
+                        OPTION => d_id.equals(Application.Storage.getValue(Storage.PLEX_SERVER_ID)) },
                     { LABEL => WatchUi.loadResource(Rez.Strings.PlexServerAddress),
                         SUBLABEL => (record["custom"] != null) ? record["custom"] : record["uri"],
-                        METHOD => method(:customAddress) },
-                    { LABEL => WatchUi.loadResource(Rez.Strings.UseAutomaticAddress),
-                        SUBLABEL => null, METHOD => method(:automaticAddress) }
-                ]);
+                        METHOD => method(:customAddress) }
+                ];
+                if (record["custom"] != null) {
+                    items.add({ LABEL => WatchUi.loadResource(Rez.Strings.UseAutomaticAddress),
+                        SUBLABEL => null, METHOD => method(:automaticAddress) });
+                }
+                return MenuBase.load(items);
             }
             function toggleEnabled() {
                 var record = PlexServers.get(d_id);

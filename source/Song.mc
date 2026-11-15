@@ -13,6 +13,7 @@ class Song extends Storable {
 		"artist" => "",			// artist of the song
 		"time" => 0,			// duration of the song
 		"mime" => "",			// string e.g. "audio/mpeg"
+		"sourceBytes" => null,
 		"media_key" => null,	// Plex Part key used for direct MP3 downloads
 		"art_id" => null,		// null if no art_id available
 
@@ -51,6 +52,8 @@ class Song extends Storable {
 		return d_storage["media_key"];
 	}
 	
+    function sourceBytes() { return d_storage["sourceBytes"]; }
+
 	function downloadBytes() {
 		return d_storage["downloadBytes"];
 	}
@@ -162,7 +165,7 @@ class ISong extends Song {
 				// The native cache may already have removed the file (reset,
 				// interrupted sync, simulator restart). Deletion is idempotent:
 				// stale Plexit metadata must still be cleared below.
-				System.println("Cached audio already unavailable during delete: " + error);
+				Plexit.Utils.log("Cached audio already unavailable during delete: " + error);
 			}
 		}
 
@@ -251,6 +254,7 @@ class ISong extends Song {
 		var changed = updateAny("time", song.time());
 		changed |= updateAny("mime", song.mime());
 		changed |= updateAny("media_key", song.mediaKey());
+        changed |= updateAny("sourceBytes", song.sourceBytes());
 		changed |= updateAny("title", song.title());		// not used, so no storage needed
 		changed |= updateAny("artist", song.artist());	// not used, so no storage needed
 		changed |= setArt_id(song.art_id());

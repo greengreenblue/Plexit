@@ -40,17 +40,17 @@ class PlexitContentDelegate extends Media.ContentDelegate {
 
 	function setAudioArtwork(audio) {
 		if (!(audio instanceof Plexit.Audio)) {
-			System.println("Playback artwork: audio lookup failed");
+			Plexit.Utils.log("Playback artwork: audio lookup failed");
 			Media.setAlbumArt(null);
 			return;
 		}
 		var artwork = audio.artwork();
-		System.println("Playback artwork: song=" + audio.id()
+		Plexit.Utils.log("Playback artwork: song=" + audio.id()
 			+ ", available=" + (artwork != null));
 		try {
 			Media.setAlbumArt(artwork);
 		} catch (error) {
-			System.println("Playback artwork rejected: " + error);
+			Plexit.Utils.log("Playback artwork rejected: " + error);
 			Media.setAlbumArt(null);
 		}
 	}
@@ -76,7 +76,7 @@ class PlexitContentDelegate extends Media.ContentDelegate {
         try {
             var audio = findAudioByRefId(contentRefId);
             if (!(audio instanceof Plexit.Audio)) {
-                System.println("Rating ignored: no matching local song");
+                Plexit.Utils.log("Rating ignored: no matching local song");
                 return;
             }
             RatingStore.reload();
@@ -84,12 +84,12 @@ class PlexitContentDelegate extends Media.ContentDelegate {
                 "id" => audio.id(),
                 "value" => value,
             }));
-            System.println("Rating queued: song=" + audio.id()
+            Plexit.Utils.log("Rating queued: song=" + audio.id()
                 + ", value=" + value + ", saved=" + saved);
         } catch (error) {
             // Rating is optional. Never allow a stale native ContentRef callback
             // to terminate playback.
-            System.println("Ignoring rating callback error: " + error);
+            Plexit.Utils.log("Ignoring rating callback error: " + error);
         }
     }
 
@@ -122,7 +122,7 @@ class PlexitContentDelegate extends Media.ContentDelegate {
 			// ContentRef IDs are opaque platform objects and native callbacks may
 			// arrive while the queue/cache is being replaced. Never let an optional
 			// artwork or scrobble action terminate playback.
-			System.println("Ignoring playback callback error: " + error);
+			Plexit.Utils.log("Ignoring playback callback error: " + error);
 		}
 	}
 
@@ -137,7 +137,7 @@ class PlexitContentDelegate extends Media.ContentDelegate {
 
 		var audio = findAudioByRefId(contentRefId);
 		if (audio == null) {
-			System.println("Playback callback: no matching local song");
+			Plexit.Utils.log("Playback callback: no matching local song");
 			return;
 		}
 		

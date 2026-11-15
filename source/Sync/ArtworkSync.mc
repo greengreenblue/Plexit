@@ -43,6 +43,7 @@ class ArtworkSync extends Deferrable {
 	}
 	
 	function sync() {
+        if (!isActive()) { return false; }
 		// if songs all finished, complete this task
 		if (d_todo.size() == 0) {
 	   		return Deferrable.complete();				// set complete
@@ -76,15 +77,17 @@ class ArtworkSync extends Deferrable {
 
 	// handle callback on intermediate progress
 	function onProgress(progress) {
+        if (!isActive()) { return; }
 		progress /= d_todo_total.toFloat();
 		f_progress.invoke(progress() + progress);
 	}
 	
     // Callback for when a song is downloaded
 	    function onDownloaded(artwork) {
+        if (!isActive()) { return; }
 			// update artwork
 			d_todo[0].setImage(artwork);
-			System.println("Artwork cached successfully: " + d_todo[0].art_id());
+			Plexit.Utils.log("Artwork cached successfully: " + d_todo[0].art_id());
 
 		// continue to next song
 		d_todo.removeAll(d_todo[0]);
@@ -93,7 +96,14 @@ class ArtworkSync extends Deferrable {
 	}
     
 	    function onError(error) {
-	    	System.println("Artwork skipped after error: " + error);
+        if (!isActive()) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Toybox.Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Toybox.Communications.BLE_REQUEST_CANCELLED))) {
+            Deferrable.cancel(error);
+            return;
+        }
+        Plexit.Utils.log("Artwork skipped after error: " + error);
     	// indicate failed sync
 //   	d_playlist.setError(error); TODO
     	// d_failed.add(d_todo[0]);

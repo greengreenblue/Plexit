@@ -1,3 +1,13 @@
+// A stopped/replaced sync invalidates every task and transport created by it.
+module PlexSyncSession {
+    var generation = 0;
+    var running = false;
+    function begin() { generation += 1; running = true; return generation; }
+    function token() { return running ? generation : null; }
+    function valid(token) { return (token == null) || (running && (token == generation)); }
+    function stop() { running = false; generation += 1; }
+}
+
 class Deferrable {
 	
 	private var d_run;			// function returning true if completed, false if callback needed
@@ -6,16 +16,23 @@ class Deferrable {
 	
 	private var d_canceled = false;		// true: task is canceled
 	private var d_deferred = false;		// true: task is deferred and will be continued later
+	private var d_session = null;
 	private var d_complete = false;		// true: task is completed
 	
 	function initialize(run, done, fail) {
+		d_session = PlexSyncSession.token();
 		d_run = run;
 		d_callback = done;
 		d_fallback = fail;
 	}
 	
+    function isActive() {
+        return !d_canceled && !d_complete && PlexSyncSession.valid(d_session);
+    }
+
 	// perform the task, return task status
 	function run() {
+        if (!isActive()) { return false; }
 		return d_run.invoke();
 	}
 	
@@ -31,6 +48,7 @@ class Deferrable {
 	
 	// mark as canceled task - should be called when an error occured in d_run
 	function cancel(error) {
+        if (!isActive()) { return false; }
 		d_canceled = true;
 		
 		d_fallback.invoke(error);
@@ -40,12 +58,14 @@ class Deferrable {
 	
 	// mark as deferred task - should be called when d_run could not complete yet
 	function defer() {
+        if (!PlexSyncSession.valid(d_session) || d_canceled) { return false; }
 		d_deferred = true;
 		return d_complete;
 	}
 	
 	// mark as completed task, invokes callback if task was previously deferred
 	function complete() {
+        if (!isActive()) { return d_complete; }
 		d_complete = true;
 		if (d_deferred) { 		// why only when deferred?
 			d_callback.invoke();
@@ -70,6 +90,7 @@ class DeferredFor extends Deferrable {
 
 	// iterates until received false (not complete)
 	function run() {
+        if (!isActive()) { return false; }
 		for (; d_idx != d_end; ++d_idx) {
 			var deferrable = d_fac.invoke(d_idx, method(:proceed), method(:cancel));		// create task
 			// deferrable.setCallback(method(:proceed));	// request to continue run() after completion
@@ -86,11 +107,13 @@ class DeferredFor extends Deferrable {
 	}
 	
 	function proceed() {
+        if (!isActive()) { return; }
 		d_idx++;			// this was skipped due to break in for loop
 		run();
 	}
 	
 	function cancel(error) {
+        if (!isActive()) { return; }
 		// if this is called, break the running for loop
 		d_idx = d_end;
 		

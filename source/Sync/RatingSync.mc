@@ -18,6 +18,7 @@ module Plexit {
         }
 
         function sync() {
+        if (!isActive()) { return false; }
             if (d_idx >= d_ids.size()) {
                 return Deferrable.complete();
             }
@@ -43,15 +44,23 @@ module Plexit {
         }
 
         function onRated(response) {
+        if (!isActive()) { return; }
             RatingStore.removeIfCurrent(d_rating);
             d_idx += 1;
             sync();
         }
 
         function onError(error) {
+        if (!isActive()) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Toybox.Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Toybox.Communications.BLE_REQUEST_CANCELLED))) {
+            Deferrable.cancel(error);
+            return;
+        }
             // Preserve this rating for its source and continue other servers. Rating
             // write-back is useful but must not block music downloads.
-            System.println("Plex rating sync deferred: " + error);
+            Plexit.Utils.log("Plex rating sync deferred: " + error);
             d_idx += 1;
             sync();
         }

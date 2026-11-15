@@ -19,12 +19,14 @@ class PlaylistSync extends Deferrable {
 	}
 	
 	function sync() {
+        if (!isActive()) { return false; }
         if (d_iplaylist.local() && PlexServers.skipSync(PlexSource.serverId(d_iplaylist.id()))) {
             d_iplaylist.setSynced(false);
             return Deferrable.complete();
         }
 		// if desired local, update playlist info
     	if (d_iplaylist.local()) {
+			d_iplaylist.setMetadataSynced(false);
 			d_provider.getPlaylist(d_iplaylist.id(), method(:onGetPlaylist));
 			return Deferrable.defer();
    		}
@@ -37,6 +39,7 @@ class PlaylistSync extends Deferrable {
 	}
 	
 	function onGetPlaylist(response) {
+        if (!isActive()) { return; }
 
 		// mark first out of 2 requests done
 		onProgress(50);
@@ -65,11 +68,12 @@ class PlaylistSync extends Deferrable {
     		return;
     	}
     	
-		d_iplaylist.setSynced(!d_failed);	// not failed = successful sync
+		d_iplaylist.setMetadataSynced(!d_failed);	// not failed = successful sync
    		Deferrable.complete();				// set sync complete
 	}
 	
 	function onGetPlaylistSongs(songs) {
+        if (!isActive()) { return; }
 		// mark 2 out of 2 requests done
 		onProgress(100);
 
@@ -84,20 +88,28 @@ class PlaylistSync extends Deferrable {
 
 		// update the playlist with remote songs
     	d_iplaylist.update(songs);			// returns new remote songs, not used
-		d_iplaylist.setSynced(!d_failed);	// not failed = successful sync
+		d_iplaylist.setMetadataSynced(!d_failed);	// not failed = successful sync
 		Deferrable.complete();				// set sync complete
 	}
 
 	// handle callback on intermediate progress
 	function onProgress(progress) {
+        if (!isActive()) { return; }
 		f_progress.invoke(progress);
 	}
     
     function onError(error) {
+        if (!isActive()) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Toybox.Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Toybox.Communications.BLE_REQUEST_CANCELLED))) {
+            Deferrable.cancel(error);
+            return;
+        }
     	// indicate failed sync
 //   	d_iplaylist.setError(error); TODO
     	d_failed = true;
-	    d_iplaylist.setSynced(!d_failed);
+	    d_iplaylist.setMetadataSynced(!d_failed);
 
 		// 'not found' can return through api or http status codes
 		var api_not_found = (error instanceof Plexit.ApiError)

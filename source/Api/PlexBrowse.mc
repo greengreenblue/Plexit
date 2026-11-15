@@ -63,7 +63,7 @@ class PlexBrowse {
                 }
             }
         }
-        System.println("Browse music sections: " + d_sections.size());
+        Plexit.Utils.log("Browse music sections: " + d_sections.size());
         if (d_sections.size() == 0) { complete([], null); return; }
         if (!d_query.equals("")) { requestSearch(); }
         else { requestPage(); }
@@ -89,7 +89,7 @@ class PlexBrowse {
         params.put("X-Plex-Container-Size", d_limit);
         d_requestKind = "page";
         params.put("sort", "titleSort:asc");
-        System.println("Browse page: type=" + d_type + ", section=" + d_section + ", offset=" + d_offset);
+        Plexit.Utils.log("Browse page: type=" + d_type + ", section=" + d_section + ", offset=" + d_offset);
         if (d_artist != null) {
             d_api.metadata_children(method(:onPage), params, d_artist);
         } else if (d_type == null) {
@@ -192,7 +192,7 @@ class PlexBrowse {
 
     function complete(items, next) {
         if (d_cancelled) { return; }
-        System.println("Browse received " + items.size() + " items; free memory=" + System.getSystemStats().freeMemory);
+        Plexit.Utils.log("Browse received " + items.size() + " items; free memory=" + System.getSystemStats().freeMemory);
         var callback = d_callback;
         cancel();
         callback.invoke(items, next);
@@ -204,13 +204,13 @@ class PlexBrowse {
             && (error.respCode() == Communications.NETWORK_RESPONSE_TOO_LARGE)) {
             if ((d_requestKind.equals("page")) && (d_limit > 1)) {
                 d_limit = (d_limit / 2).toNumber();
-                System.println("Browse response too large; retrying " + d_limit + " items");
+                Plexit.Utils.log("Browse response too large; retrying " + d_limit + " items");
                 requestPage();
                 return;
             }
             if ((d_requestKind.equals("search")) && (d_searchLimit > 1)) {
                 d_searchLimit = (d_searchLimit / 2).toNumber();
-                System.println("Search response too large; retrying limit=" + d_searchLimit);
+                Plexit.Utils.log("Search response too large; retrying limit=" + d_searchLimit);
                 requestSearch();
                 return;
             }

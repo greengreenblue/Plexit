@@ -4,6 +4,7 @@ class PlexProvider {
 
     private var d_api;
     private var d_source;
+    private var d_syncSession = null;
 
     // callbacks
     private var d_callback;  // callback for finished request
@@ -21,6 +22,7 @@ class PlexProvider {
 
 	private var d_id;       // required for getPlaylist, getPlaylistSongs, getRefId, getArtwork
 	private var d_mediaKey;			// Plex Part key used for direct downloads
+	private var d_trackSeconds = 0;
 	private var d_directStream = false;	// retry a failed direct MP3 download through Plex transcoding
 	private var d_response;				// construct full response
 	private var d_collectionType = null;
@@ -49,6 +51,7 @@ class PlexProvider {
 	}
 
     function initialize(settings) {
+        d_syncSession = PlexSyncSession.token();
         d_source = settings["server_id"];
         d_api = new PlexAPI(
             settings,
@@ -58,6 +61,7 @@ class PlexProvider {
     }
 	
 	function onSettingsChanged(settings) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         d_source = settings["server_id"];
 		d_api.update(settings);
 	}
@@ -87,6 +91,7 @@ class PlexProvider {
     }
 
 	function on_do_ping(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_action = null;
 		d_callback.invoke(response);
 	}
@@ -109,6 +114,7 @@ class PlexProvider {
 	}
 
 	function on_do_record_play(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_action = null;
 		d_callback.invoke(response); // expected empty response
 	}
@@ -126,6 +132,7 @@ class PlexProvider {
 	}
 
 	function on_do_rate(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_action = null;
 		d_callback.invoke(response);
 	}
@@ -152,6 +159,7 @@ class PlexProvider {
 	}
 
 	function on_do_playlists(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		
 		// get the array of playlists
 		response = response["Metadata"];
@@ -194,6 +202,7 @@ class PlexProvider {
 	}
 
 	function on_do_dynamic_metadata(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var stored = new IPlaylist(PlexSource.qualify(d_source, d_id));
 		if (stored.stored()) {
 			stored.setRemote(true);
@@ -206,6 +215,7 @@ class PlexProvider {
 	}
 
 	function on_do_playlist(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var metadata = response["Metadata"];
 		if ((metadata instanceof Lang.Array) && (metadata.size() > 0)) {
 			d_response.add(plex_to_playlist(metadata[0]));
@@ -219,6 +229,7 @@ class PlexProvider {
 	}
 
 	function on_do_library_metadata(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var metadata = null;
 		if (response instanceof Lang.Dictionary) {
 			metadata = response["Metadata"];
@@ -246,7 +257,7 @@ class PlexProvider {
 			var storedCollection = new IPlaylist(PlexSource.qualify(d_source, d_id));
 			if (storedCollection.stored() && storedCollection.remote()) {
 				d_response.add(storedCollection);
-				System.println("Plex metadata wrapper missing; using stored collection " + d_id);
+				Plexit.Utils.log("Plex metadata wrapper missing; using stored collection " + d_id);
 			}
 		}
 		d_action = null;
@@ -317,6 +328,7 @@ class PlexProvider {
 	}
 
 	function on_do_library_sections(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var directories = response["Directory"];
 		if (directories instanceof Lang.Dictionary) { directories = [ directories ]; }
 		if (directories instanceof Lang.Array) {
@@ -360,6 +372,7 @@ class PlexProvider {
 	}
 
 	function on_do_genres(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var directories = response["Directory"];
 		if (directories instanceof Lang.Dictionary) { directories = [ directories ]; }
 		if (directories instanceof Lang.Array) {
@@ -398,6 +411,7 @@ class PlexProvider {
 	}
 
 	function on_do_collections(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var metadata = response["Metadata"];
 		if (metadata instanceof Lang.Dictionary) { metadata = [ metadata ]; }
 		if (!(metadata instanceof Lang.Array)) { metadata = []; }
@@ -441,6 +455,7 @@ class PlexProvider {
 	}
 
 	function on_do_library_items(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var metadata = response["Metadata"];
 		if (metadata instanceof Lang.Dictionary) {
 			metadata = [ metadata ];
@@ -543,6 +558,7 @@ class PlexProvider {
 	}
 
 	function on_do_playlist_songs(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 
 		// get the array of songs on the playlist
 		if (response instanceof Lang.Dictionary) {
@@ -585,12 +601,14 @@ class PlexProvider {
 
 			var container = null;
 			var mediaKey = null;
+            var sourceBytes = null;
 			var media = song["Media"];
 			if ((media instanceof Lang.Array) && (media.size() > 0)) {
 				var parts = media[0]["Part"];
 				if ((parts instanceof Lang.Array) && (parts.size() > 0)) {
 					container = parts[0]["container"];
 					mediaKey = parts[0]["key"];
+                    sourceBytes = parts[0]["size"];
 				}
 			}
 			d_response.add(new Song({
@@ -600,6 +618,7 @@ class PlexProvider {
 				"time" => seconds,
 				"mime" => containerToMime(container),
 				"media_key" => mediaKey,
+                "sourceBytes" => sourceBytes,
 					// Track.thumb is the album cover. Track.art is a much larger
 					// artist/background image and is unsuitable for the watch player.
 					"art_id" => PlexSource.qualify(d_source, song["thumb"]),
@@ -637,6 +656,7 @@ class PlexProvider {
 	}
 
 	function on_do_dynamic_sections(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_sectionIds = [];
 		if (d_collectionType.equals("genre")) {
 			var genreParts = d_id.substring(6, d_id.length());
@@ -671,6 +691,7 @@ class PlexProvider {
 	}
 
 	function on_do_dynamic_items(response) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var tracks = response["Metadata"];
 		if (tracks instanceof Lang.Dictionary) { tracks = [ tracks ]; }
 		if (!(tracks instanceof Lang.Array)) { tracks = []; }
@@ -709,11 +730,14 @@ class PlexProvider {
 		d_callback = callback;
 		d_id = PlexSource.raw(id);
 		d_mediaKey = mediaKey;
+        d_trackSeconds = (new ISong(id)).time();
+        d_api.setDownloadEstimate(null);
 
 		// Preserve an existing MP3 without a lossy re-encode. Any failure is
 		// retried through the deterministic Plex transcode path below.
 		d_directStream = isDirectMp3(mime, mediaKey);
 		if (d_directStream) {
+            d_api.setDownloadEstimate((new ISong(id)).sourceBytes());
 			d_params = { "download" => 1 };
 			d_action = PLEX_STREAM;
 		} else {
@@ -731,6 +755,7 @@ class PlexProvider {
 	}
 
 	function prepareMp3Transcode() {
+        d_api.setDownloadEstimate(d_trackSeconds * 192000.0 / 8);
 		d_directStream = false;
 		var sessionId = PlexAccount.clientId();
 		d_params = {
@@ -752,11 +777,13 @@ class PlexProvider {
 	}
 
 	function on_do_stream(contentRef) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_action = null;
 		d_callback.invoke(contentRef.getId(), d_api.downloadBytes());
 	}
 
 	function on_do_transcode_decision(responseCode, body) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		if (responseCode == 200) {
 			d_action = PLEX_STREAM;
 			do_();
@@ -790,6 +817,7 @@ class PlexProvider {
 	}
 
 	function on_do_get_art(artwork) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		d_action = null; 
 		d_callback.invoke(artwork);
 	}
@@ -824,6 +852,7 @@ class PlexProvider {
 	 * assumes required params are set, can be repeated
 	 */
 	function do_() {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         if (!d_api.isAvailable()) {
             onError(new Plexit.ApiError(Plexit.ApiError.ACCESS));
             return;
@@ -941,6 +970,14 @@ class PlexProvider {
 	}
 
 	function onError(error) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Communications.BLE_REQUEST_CANCELLED))) {
+            d_action = null;
+            d_fallback.invoke(error);
+            return;
+        }
 		// A file reported as MP3 can still be unsuitable for the watch or the
 		// direct Part URL can fail. Transparently retry it as MP3/192 kbps once.
 		if ((d_action == PLEX_STREAM) && d_directStream) {
@@ -956,17 +993,18 @@ class PlexProvider {
 			&& (d_limit > 1)) {
 			
 			d_limit = (d_limit / 2).toNumber();		// half the response
-			System.println("Plex response too large; retrying with page size " + d_limit);
+			Plexit.Utils.log("Plex response too large; retrying with page size " + d_limit);
 			do_();									// retry the request
 			return;
 		}
 
 		d_action = null;
-		System.println("Plex request failed: " + error);
+		Plexit.Utils.log("Plex request failed: " + error);
 		d_fallback.invoke(error);
     }
 
     function onProgress(progress) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         d_progress.invoke(progress);
     }   
     

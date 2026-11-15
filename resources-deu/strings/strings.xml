@@ -139,8 +139,8 @@
     <string id="RatingsWaiting_few">$1$ Bewertungen ausstehend</string>
     <string id="RatingsWaiting_many">$1$ Bewertungen ausstehend</string>
     <string id="PlexServerAddress">Serveradresse</string>
-    <string id="PlexInvalidServerAddress">Gültige HTTPS-Serveradresse ohne Zugangsdaten oder Abfrageparameter eingeben.</string>
-    <string id="PlexServerAddressSaved">Serveradresse gespeichert. Zurückgehen und erneut laden.</string>
+    <string id="PlexInvalidServerAddress">HTTPS ohne Zugangsdaten oder URL-Parameter verwenden.</string>
+    <string id="PlexServerAddressSaved">Adresse gespeichert. Zurückgehen und erneut versuchen.</string>
     <string id="MusicServers_label">Musikserver</string>
     <string id="MusicServer_label">Musikserver auswählen</string>
     <string id="ServerEnabled_label">Aktiviert</string>
@@ -150,9 +150,24 @@
     <string id="ServerUnknown_label">Nicht geprüft</string>
     <string id="ServerUnavailable_label">Zugriff nicht verfügbar</string>
     <string id="ServerDisabled_label">Deaktiviert</string>
-    <string id="SyncIncompleteMessage">Einige Titel konnten nicht synchronisiert werden. Erneut versuchen, wenn der Server erreichbar ist.</string>
+    <string id="SyncIncompleteMessage">Sync unvollständig. Bei verfügbarem Server erneut versuchen.</string>
     <string id="RefreshServers_label">Serverliste aktualisieren</string>
-    <string id="ServerListUpdated">Serverliste aktualisiert. Zurückgehen und einen Musikserver auswählen.</string>
-    <string id="UseAutomaticAddress">Automatische Adresse verwenden</string>
-    <string id="AutomaticAddressEnabled">Eigene Adresse entfernt. Die Plex-Adressen werden automatisch verwendet.</string>
+    <string id="ServerListUpdated">Liste aktualisiert. Zurückgehen und Server auswählen.</string>
+    <string id="UseAutomaticAddress">Eigene Adresse entfernen</string>
+    <string id="AutomaticAddressEnabled">Eigene Adresse entfernt. Plex-Adressen werden verwendet.</string>
+    <string id="ConnectionCompatibilityHelp">Bei Adresswechsel-Problemen. Je Fehlversuch 60 s Pause.</string>
+    <string id="ConnectionRecovering">Verbinde erneut… Versuch in $1$ s.\nZurück = Abbruch</string>
+    <string id="ServerConnectionMode">Serververbindung</string>
+    <string id="ConnectionAutomatic">Automatisch</string>
+    <string id="ConnectionAutomaticCompatibility">Automatisch – Kompatibilität</string>
+    <string id="ConnectionInternet">Nur über das Internet</string>
+    <string id="ConnectionAutomaticHelp">Erst lokale Adressen, dann Internet und Relay.</string>
+    <string id="ConnectionInternetHelp">Für Server außerhalb Ihres Heimnetzes. Auch per WLAN.</string>
+    <string id="TryInternetConnection">Nur über das Internet versuchen?</string>
+    <string id="ServerOnHomeNetwork">Ist „$1$“ in Ihrem Heimnetz?</string>
+    <string id="TryLocalAddress">Angemeldet.\nLokale Adresse $1$ von $2$ wird geprüft…</string>
+    <string id="TryRemoteAddress">Angemeldet.\nEntfernte Adresse $1$ von $2$ wird geprüft…</string>
+    <string id="ConnectionStepDeadline">Nächster Schritt spätestens in $1$ s.\nZurück = Abbrechen</string>
+    <string id="ConnectionCancelling">Stoppe Anfrage…\nWeiter in max. $1$ s.\nZurück = Abbruch</string>
+    <string id="ConnectionCancelFailed">Garmin bestätigt Abbruch nicht. Beenden und neu versuchen.</string>
 </strings>

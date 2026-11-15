@@ -5,6 +5,14 @@ using Toybox.Lang;
 module Plexit {
 	module Utils {
 
+        // Use the device's local date and time for diagnostic output.
+        function log(message) {
+            var now = Toybox.Time.Gregorian.info(Toybox.Time.now(), Toybox.Time.FORMAT_SHORT);
+            System.println("[" + now.year.format("%04d") + "-" + now.month.format("%02d")
+                + "-" + now.day.format("%02d") + " " + now.hour.format("%02d")
+                + ":" + now.min.format("%02d") + ":" + now.sec.format("%02d") + "] " + message);
+        }
+
 		// implementation of bubble sort, returning idcs to sort original
 //		function sort_idcs(array) {
 //			var size = array.size();

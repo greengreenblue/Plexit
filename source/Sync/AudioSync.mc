@@ -39,10 +39,11 @@ class AudioSync extends Deferrable {
 	}
 	
 	function sync() {
+        if (!isActive()) { return false; }
 		// if songs all finished, complete this task
 		if (d_pendingAudio.size() == 0) {
 			if (d_failed.size() > 0) {
-				System.println("Audio sync failed for " + d_failed.size() + " song(s): " + d_lastError);
+				Plexit.Utils.log("Audio sync failed for " + d_failed.size() + " song(s): " + d_lastError);
 				return Deferrable.complete();
 			}
 	   		return Deferrable.complete();				// set complete
@@ -82,12 +83,14 @@ class AudioSync extends Deferrable {
 
 	// handle callback on intermediate progress
 	function onProgress(progress) {
+        if (!isActive()) { return; }
 		progress /= d_pendingTotal.toFloat();
 		f_progress.invoke(progress() + progress);
 	}
 	
     // Callback for when a song is downloaded
 	function onDownloaded(refId, downloadBytes) {
+        if (!isActive()) { return; }
 		if (refId == null) {
 			onError(new Plexit.ApiError(Plexit.ApiError.BADRESPONSE));
 			return;
@@ -101,7 +104,7 @@ class AudioSync extends Deferrable {
 		}
 		var storedSong = new ISong(downloadedId);
 		storedSong.setDownloadBytes(downloadBytes);
-		System.println("Audio cached successfully: " + downloadedId
+		Plexit.Utils.log("Audio cached successfully: " + downloadedId
 			+ ", refId=" + storedSong.refId()
 			+ ", pending=" + SongStore.getTodos().size());
 
@@ -112,6 +115,13 @@ class AudioSync extends Deferrable {
 	}
     
 	function onError(error) {
+        if (!isActive()) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Toybox.Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Toybox.Communications.BLE_REQUEST_CANCELLED))) {
+            Deferrable.cancel(error);
+            return;
+        }
 		// check if song in progress
 		if ((d_pendingAudio.size() == 0) || (d_pendingAudio[0] == null)) {
 			Deferrable.cancel(error);

@@ -1,16 +1,15 @@
 using Toybox.Communications;
 using Toybox.Timer;
+using Toybox.Application;
 
-// Each network attempt owns its callback, so a late response after the
-// application deadline cannot finish a newer attempt.
+// Bind callbacks to their request so cancelled owners cannot receive stale results.
 class PlexServerAttempt {
     private var d_request;
     private var d_number;
     function initialize(request, number) { d_request = request; d_number = number; }
     function response(code, data) { d_request.onAttemptResponse(d_number, code, data); }
-    function expired() {
-        d_request.onAttemptResponse(d_number, Communications.NETWORK_REQUEST_TIMED_OUT, null);
-    }
+    function progress(bytes, total) { d_request.onAttemptProgress(d_number, bytes, total); }
+
 }
 
 // One bounded retry chain per request. The original path, parameters and
@@ -27,10 +26,28 @@ class PlexServerRequest {
     private var d_failure = null;
     private var d_timer = null;
     private var d_attempt = 0;
+    private var d_compatibility;
+    private var d_syncSession = null;
 
     function setFailureCallback(callback) { d_failure = callback; }
+    function setCompatibility(enabled) { d_compatibility = enabled; }
+
+    function scheduleRetry() {
+        // Only schedule after the real transport callback. Do not manufacture a
+        // timeout while the previous network operation is still running.
+        if (d_compatibility) {
+            Plexit.Utils.log("Plex connection recovery: waiting 60 seconds before next address");
+            waitBeforeRetry(60000);
+        } else { start(); }
+    }
+
+    function waitBeforeRetry(milliseconds) {
+        d_timer = new Timer.Timer();
+        d_timer.start(method(:start), milliseconds, false);
+    }
 
     function initialize(urls, path, params, options, callback, selected, retry) {
+        d_syncSession = PlexSyncSession.token();
         d_urls = urls;
         d_path = path;
         d_params = params;
@@ -38,10 +55,12 @@ class PlexServerRequest {
         d_callback = callback;
         d_selected = selected;
         d_retry = retry;
+        d_compatibility = false;
     }
 
     function start() {
-        if (d_callback == null) { return; }
+        if ((d_callback == null) || !PlexSyncSession.valid(d_syncSession)) { return; }
+        stopTimer();
         sendRequest(d_urls[d_index] + d_path, d_params, d_options);
     }
 
@@ -54,20 +73,23 @@ class PlexServerRequest {
     function sendRequest(url, params, options) {
         d_attempt += 1;
         var attempt = new PlexServerAttempt(self, d_attempt);
-        // Fetch metadata has a short deadline. Audio downloads retain the
-        // host timeout because transferring a song can legitimately take longer.
-        if ((options[:responseType] == null)
-            || (options[:responseType] == Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON)) {
-            d_timer = new Timer.Timer();
-            d_timer.start(attempt.method(:expired), 15000, false);
+        var requestOptions = options;
+        if (options[:fileDownloadProgressCallback] != null) {
+            requestOptions = Plexit.Utils.copy(options);
+            requestOptions[:fileDownloadProgressCallback] = attempt.method(:progress);
         }
-        Communications.makeWebRequest(url, params, options, attempt.method(:response));
+        Communications.makeWebRequest(url, params, requestOptions, attempt.method(:response));
+    }
+
+    function onAttemptProgress(number, bytes, total) {
+        if (!PlexSyncSession.valid(d_syncSession) || (number != d_attempt) || (d_callback == null)) { return; }
+        var progress = d_options[:fileDownloadProgressCallback];
+        if (progress != null) { progress.invoke(bytes, total); }
     }
 
     function onAttemptResponse(number, code, data) {
-        if ((number != d_attempt) || (d_callback == null)) { return; }
-        // Invalidate this attempt even when its timer fired before the host
-        // completed the underlying request.
+        if (!PlexSyncSession.valid(d_syncSession) || (number != d_attempt) || (d_callback == null)) { return; }
+        // Ignore duplicate callbacks from an already completed attempt.
         d_attempt += 1;
         onResponse(code, data);
     }
@@ -88,7 +110,7 @@ class PlexServerRequest {
     }
 
     function onResponse(code, data) {
-        if (d_callback == null) { return; }
+        if ((d_callback == null) || !PlexSyncSession.valid(d_syncSession)) { return; }
         stopTimer();
         // An unreachable endpoint can surface as HTTP 404 in the simulator
         // or an intermediary. Try the same read on the other addresses of
@@ -96,9 +118,9 @@ class PlexServerRequest {
         // reaches the caller unchanged; writes are never replayed.
         if (d_retry && (canRetry(code) || (code == 404)) && ((d_index + 1) < d_urls.size())) {
             d_index += 1;
-            System.println("Plex connection failed (" + code + "); trying address "
+            Plexit.Utils.log("Plex connection failed (" + code + "); trying address "
                 + (d_index + 1) + "/" + d_urls.size());
-            start();
+            scheduleRetry();
             return;
         }
         var callback = d_callback;

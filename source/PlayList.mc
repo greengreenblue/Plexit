@@ -16,6 +16,7 @@ class Playlist {
 	hidden var d_time = 0;			// total playing time of the playlist in seconds
 	
 	hidden var d_remote = false; 	// true if metadata remotely available (according to last check)
+	hidden var d_metadataSynced = false;
 	hidden var d_synced = false;	// true if no songs failed during sync -> or track by date last synced?
 	
 	hidden var d_linked = false;	// true if all songs are referenced in their refCount
@@ -49,6 +50,9 @@ class Playlist {
 		if (storage["synced"] != null) {
 			d_synced = storage["synced"];
 		}
+        // Older records used synced for metadata only; finalization also verifies audio.
+        d_metadataSynced = (storage["metadataSynced"] != null)
+            ? storage["metadataSynced"] : d_synced;
 		if (storage["local"] != null) {
 			d_local = storage["local"];
 		}
@@ -70,6 +74,7 @@ class Playlist {
 			"linked" => d_linked,
 			"remote" => d_remote,
 			"synced" => d_synced,
+            "metadataSynced" => d_metadataSynced,
 			"local" => d_local,
 		};
 	}
@@ -184,6 +189,7 @@ class IPlaylist extends Playlist {
 		// A changed offline selection always requires a sync. This also covers
 		// removing a previously downloaded playlist.
 		d_synced = false;
+        d_metadataSynced = false;
 
 		return save();		// forced save, as local
 	}
@@ -201,6 +207,21 @@ class IPlaylist extends Playlist {
 		}
 		return true;
 	}
+
+    function setMetadataSynced(value) {
+        d_metadataSynced = value;
+        d_synced = false;
+        if (d_stored) { save(); }
+    }
+
+    function refreshSyncState() {
+        var complete = d_metadataSynced && d_remote && d_local;
+        for (var i = 0; complete && (i < d_songs.size()); i += 1) {
+            if ((new ISong(d_songs[i])).refId() == null) { complete = false; }
+        }
+        setSynced(complete);
+        return complete;
+    }
 
 	function setSynced(synced) {
 		// nothing to do if not changed

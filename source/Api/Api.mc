@@ -19,6 +19,10 @@ class Api {
     private var d_usr;      // the user 
     private var d_key;      // the key used to login
 	private var d_lastProgressBytes = 0;
+    private var d_progressLogTime = null;
+    private var d_estimatedDownloadBytes = null;
+    private var d_reportedDownloadProgress = 0;
+    private var d_progressSession = null;
 	private var d_downloadBytes = null;
 
 
@@ -123,32 +127,50 @@ class Api {
         return new Plexit.ApiError(Plexit.ApiError.BADRESPONSE);
     }
 
-	function onProgress(totalBytesTransferred, fileSize) {
-		if (fileSize != null && fileSize > 0) {
-			// Persisted by AudioSync only after a successful ContentRef response.
-			// A progress callback without fileSize may be the last callback before
-			// completion, so transferred bytes alone are not a proven file size.
-			d_downloadBytes = fileSize;
-			var progress = 100 * (totalBytesTransferred / fileSize.toFloat());
-			d_progress.invoke(progress);
-			return;
-		}
+    function setDownloadEstimate(bytes) {
+        d_estimatedDownloadBytes = ((bytes != null) && (bytes > 0)) ? bytes : null;
+    }
 
-		// Transcoded/chunked responses do not always include Content-Length.
-		// Reporting zero for every callback made the native UI look frozen and
-		// could move it backwards. Keep the item-level progress unchanged, but
-		// log byte movement so a real stalled request is distinguishable.
-		if ((d_lastProgressBytes == 0)
-			|| ((totalBytesTransferred - d_lastProgressBytes) >= 262144)) {
-			System.println("Audio download: " + totalBytesTransferred + " bytes (total unknown)");
-			d_lastProgressBytes = totalBytesTransferred;
-		}
-	}
+    function onProgress(totalBytesTransferred, fileSize) {
+        if (!PlexSyncSession.valid(d_progressSession)) { return; }
+        if (totalBytesTransferred < d_lastProgressBytes) { d_downloadBytes = null; }
+        d_lastProgressBytes = totalBytesTransferred;
+        var total = (d_downloadBytes != null) ? d_downloadBytes : d_estimatedDownloadBytes;
+        var limit = (d_downloadBytes != null) ? 99 : 95;
+        if ((fileSize != null) && (fileSize > 0)) {
+            d_downloadBytes = fileSize;
+            total = fileSize;
+            limit = 99;
+        }
+        if ((total != null) && (total > 0)) {
+            var progress = 100.0 * totalBytesTransferred / total.toFloat();
+            if (progress > limit) { progress = limit; }
+            if (progress > d_reportedDownloadProgress) {
+                d_reportedDownloadProgress = progress;
+                if (d_progress != null) { d_progress.invoke(progress); }
+            }
+        }
+        var now = System.getTimer();
+        if ((d_progressLogTime == null) || ((now - d_progressLogTime) >= 10000)) {
+            Plexit.Utils.log("Audio download: " + totalBytesTransferred + " bytes; "
+                + ((fileSize != null && fileSize > 0) ? "total=" + fileSize
+                    : ((total != null) ? "estimated total=" + total : "total unknown")));
+            d_progressLogTime = now;
+        }
+    }
 
-	function beginDownloadProgress() {
-		d_lastProgressBytes = 0;
-		d_downloadBytes = null;
-	}
+    function beginDownloadProgress() {
+        d_progressSession = PlexSyncSession.token();
+        d_lastProgressBytes = 0;
+        d_downloadBytes = null;
+        d_progressLogTime = null;
+        d_reportedDownloadProgress = 0;
+    }
+
+    function finishDownloadProgress() {
+        if (d_downloadBytes == null && d_lastProgressBytes > 0) { d_downloadBytes = d_lastProgressBytes; }
+        // Item completion is reported by AudioSync after the ContentRef is saved.
+    }
 
 	function downloadBytes() {
 		return d_downloadBytes;

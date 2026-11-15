@@ -18,6 +18,8 @@ module Plexit {
 		private var d_ids;
 		private var d_ids_total = 0;	// nr of ids in beginning
 		private var d_last = 0;			// last idx
+		private var d_running = false;
+        private var d_session = null;
 		private var d_lastProgress = 0;		// progress shown by the native sync UI
 
 		enum { START, RATINGS = START, SCROBBLE, PLAYLISTS, AUDIO, ARTWORK, END}
@@ -30,6 +32,8 @@ module Plexit {
 
 		// Starts the sync with the system
 		function onStartSync() {
+            d_session = PlexSyncSession.begin();
+            d_running = true;
             PlexServers.beginSync();
 			// Garmin can keep the sync delegate in a separate long-lived runtime
 			// context. Offline selections made in the configuration views are
@@ -49,6 +53,9 @@ module Plexit {
 
 		// stops the sync
 		function onStopSync() {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
+            d_running = false;
+            PlexSyncSession.stop();
 			Communications.cancelAllRequests();
 
 			var errorMessage = WatchUi.loadResource(Rez.Strings.SyncStopped);
@@ -56,20 +63,22 @@ module Plexit {
 		}
 
 		function onCompleteSync() {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			var songIds = SongStore.getIds();
 			var cachedSongs = 0;
 			for (var idx = 0; idx < songIds.size(); ++idx) {
 				var song = new ISong(songIds[idx]);
 				if (song.refId() != null) { cachedSongs += 1; }
 			}
-			System.println("Sync verification: cached=" + cachedSongs
+			Plexit.Utils.log("Sync verification: cached=" + cachedSongs
 				+ ", songs=" + songIds.size()
 				+ ", pending=" + SongStore.getTodos().size());
 
 			var playlistIds = PlaylistStore.getIds();
 			for (var playlistIdx = 0; playlistIdx < playlistIds.size(); ++playlistIdx) {
 				var playlist = new IPlaylist(playlistIds[playlistIdx]);
-				System.println("Playlist verification: id=" + playlist.id()
+                if (playlist.local()) { playlist.refreshSyncState(); }
+				Plexit.Utils.log("Playlist verification: id=" + playlist.id()
 					+ ", local=" + playlist.local()
 					+ ", synced=" + playlist.synced()
 					+ ", songs=" + playlist.count());
@@ -83,7 +92,7 @@ module Plexit {
 			playable.removeRemoved();
 			if ((playable.size() == 0) && (cachedSongs > 0)) {
 				playable.loadSongIds(songIds);
-				System.println("Playback queue initialized with " + playable.size() + " song(s)");
+				Plexit.Utils.log("Playback queue initialized with " + playable.size() + " song(s)");
 			}
 
 			reportProgress(100);
@@ -98,11 +107,14 @@ module Plexit {
                 if (selection.local() && !selection.synced()
                     && PlexServers.isEnabled(PlexSource.serverId(selection.id()))) { incomplete = true; }
             }
+			d_running = false;
+            PlexSyncSession.stop();
 			d_notifySyncComplete.invoke(incomplete ? WatchUi.loadResource(Rez.Strings.SyncIncompleteMessage) : null);
 			Application.Storage.setValue(Storage.LAST_SYNC, { "time" => Time.now().value(), });
 		}
 
 		function doSync() {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			var deferrable = getSync(d_syncstage);
 			if (deferrable == null) {
 				// this means no more syncs available
@@ -126,10 +138,10 @@ module Plexit {
 			} else if (idx == PLAYLISTS) {
 				d_ids = PlaylistStore.getIds();
 				d_ids_total = d_ids.size();
-				System.println("Sync queue loaded with " + d_ids_total + " selection(s)");
+				Plexit.Utils.log("Sync queue loaded with " + d_ids_total + " selection(s)");
 				for (var queueIdx = 0; queueIdx < d_ids.size(); ++queueIdx) {
 					var queued = new IPlaylist(d_ids[queueIdx]);
-					System.println("Sync queue item: id=" + queued.id()
+					Plexit.Utils.log("Sync queue item: id=" + queued.id()
 						+ ", local=" + queued.local()
 						+ ", synced=" + queued.synced());
 				}
@@ -148,6 +160,7 @@ module Plexit {
 		}
 
 		function onDone() {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			// Complete the current stage before starting the next one. Individual
 			// sync tasks report progress relative to their own stage.
 			reportStageProgress(100);
@@ -162,10 +175,12 @@ module Plexit {
 		}
 		
 		function onProgress(progress) {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			reportStageProgress(progress);
 		}
 		
 		function onPlaylistProgress(progress) {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			if (d_ids_total == 0) {
 				reportStageProgress(100);
 				return;
@@ -212,6 +227,7 @@ module Plexit {
 		}
 
 		function reportProgress(progress) {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
 			var value = progress.toNumber();
 			if (value < d_lastProgress) { return; }
 			if (value > 100) { value = 100; }
@@ -221,6 +237,10 @@ module Plexit {
 		}
 		
 		function onError(error) {
+            if (!d_running || !PlexSyncSession.valid(d_session)) { return; }
+            d_running = false;
+            PlexSyncSession.stop();
+            Communications.cancelAllRequests();
 			// notify short error during sync
 			d_notifySyncComplete.invoke(error.shortString());
 		}

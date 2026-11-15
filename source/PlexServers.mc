@@ -3,6 +3,58 @@ using Toybox.Lang;
 using Plexit.Storage;
 
 module PlexServers {
+    const CONNECTION_AUTO = "automatic";
+    const CONNECTION_COMPATIBILITY = "compatibility";
+    const CONNECTION_INTERNET = "internet";
+
+    function connectionMode(record) {
+        if (record != null) {
+            var mode = record["connectionMode"];
+            if ((mode instanceof Lang.String) && (mode.equals(CONNECTION_AUTO)
+                || mode.equals(CONNECTION_COMPATIBILITY) || mode.equals(CONNECTION_INTERNET))) { return mode; }
+        }
+        // Preserve the previous release's global preference until explicitly changed.
+        return ((record != null) && (Application.Properties.getValue("connection_compatibility") == true))
+            ? CONNECTION_COMPATIBILITY : CONNECTION_AUTO;
+    }
+
+    function setConnectionMode(id, mode) {
+        var record = get(id);
+        if (record == null) { return; }
+        record["connectionMode"] = mode;
+        record["connectionModeChosen"] = true;
+        save(record);
+        Plexit.Provider.onSettingsChanged();
+    }
+
+    function localConnectionUrls(connections) {
+        var result = [];
+        for (var i = 0; i < connections.size(); i += 1) {
+            var c = connections[i];
+            if ((c instanceof Lang.Dictionary) && (c["local"] == true)) {
+                PlexAccount.addConnectionUrl(result, c["uri"]);
+            }
+        }
+        return result;
+    }
+
+    function isLocalConnection(record, uri) {
+        if ((record == null) || !(record["localUrls"] instanceof Lang.Array)) { return false; }
+        for (var i = 0; i < record["localUrls"].size(); i += 1) {
+            if (record["localUrls"][i].equals(uri)) { return true; }
+        }
+        return false;
+    }
+
+    function filterConnectionUrls(record, candidates) {
+        if (!connectionMode(record).equals(CONNECTION_INTERNET)) { return candidates; }
+        var result = [];
+        for (var i = 0; i < candidates.size(); i += 1) {
+            if (!isLocalConnection(record, candidates[i])) { result.add(candidates[i]); }
+        }
+        return result;
+    }
+
     function all() {
         var records = Application.Storage.getValue(Storage.PLEX_SERVERS);
         if (records instanceof Lang.Array) { return records; }
@@ -74,10 +126,15 @@ module PlexServers {
         for (var i = 0; i < records.size(); i += 1) {
             var record = records[i];
             var old = findIn(previous, record["id"]);
+            record["connectionMode"] = CONNECTION_AUTO;
+            record["connectionModeChosen"] = false;
             if (old != null) {
                 record["enabled"] = old["enabled"];
                 record["custom"] = old["custom"];
                 record["uri"] = old["uri"];
+                record["connectionMode"] = connectionMode(old);
+                record["connectionModeChosen"] = (old["connectionModeChosen"] == null) ? true : old["connectionModeChosen"];
+                if (!(record["localUrls"] instanceof Lang.Array)) { record["localUrls"] = old["localUrls"]; }
             }
             var wasCurrent = (currentId instanceof Lang.String) && currentId.equals(record["id"]);
             if ((currentId == null) && (currentName instanceof Lang.String)
@@ -137,7 +194,8 @@ module PlexServers {
     }
 
     function urls(record) {
-        return PlexAccount.orderedConnectionUrls(record["custom"], record["uri"], null, record["urls"]);
+        return filterConnectionUrls(record,
+            PlexAccount.orderedConnectionUrls(record["custom"], record["uri"], null, record["urls"]));
     }
 
     function status(id, status) {

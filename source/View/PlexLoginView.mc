@@ -5,33 +5,48 @@ using Toybox.System;
 using Toybox.Timer;
 using Toybox.WatchUi;
 
-// Bind each probe response to its attempt so timed-out requests cannot
-// select the candidate belonging to a newer request.
+// Keep stale callbacks from selecting a newer connection candidate.
 class PlexLoginProbe {
     private var d_view;
     private var d_attempt;
     private var d_started;
-    private var d_expired = false;
     function initialize(view, attempt) {
         d_view = view;
         d_attempt = attempt;
         d_started = System.getTimer();
     }
     function response(code, data) {
-        System.println("Plex probe #" + d_attempt + " Garmin response: " + code
-            + " after " + (System.getTimer() - d_started) + " ms"
-            + (d_expired ? " (late; app deadline already expired)" : ""));
+        Plexit.Utils.log("Plex probe #" + d_attempt + " Garmin response: " + code
+            + " after " + (System.getTimer() - d_started) + " ms");
         d_view.onProbeResponse(d_attempt, code, data);
     }
-    function expired() {
-        d_expired = true;
-        System.println("Plex probe #" + d_attempt + " app deadline expired after "
-            + (System.getTimer() - d_started) + " ms; reporting -300");
-        d_view.onProbeResponse(d_attempt, Communications.NETWORK_REQUEST_TIMED_OUT, null);
-    }
+
+}
+
+class PlexInternetConfirmation extends WatchUi.ConfirmationDelegate {
+    private var d_view;
+    function initialize(view) { ConfirmationDelegate.initialize(); d_view = view; }
+    function onResponse(response) { d_view.onInternetChoice(response == WatchUi.CONFIRM_YES); }
+}
+
+class PlexHomeNetworkConfirmation extends WatchUi.ConfirmationDelegate {
+    private var d_view;
+    function initialize(view) { ConfirmationDelegate.initialize(); d_view = view; }
+    function onResponse(response) { d_view.onHomeNetworkChoice(response == WatchUi.CONFIRM_YES); }
 }
 
 class PlexLoginView extends TextView {
+    private var d_loginRequestPending = false;
+    private var d_probeTimer = null;
+    private var d_probeDeadline = 0;
+    private var d_cancelDeadline = 0;
+    private var d_probeCancelled = false;
+    private var d_probeLabel = null;
+    private var d_setupWaiting = false;
+    private var d_setupResources = null;
+    private var d_setupToken = null;
+    private var d_setupIds = [];
+    private var d_setupIndex = 0;
     private var d_pinId = null;
     private var d_code = null;
     private var d_pollTimer = null;
@@ -43,8 +58,14 @@ class PlexLoginView extends TextView {
     private var d_triedUris = [];
     private var d_active = false;
     private var d_refreshOnly = false;
-    private var d_probeTimer = null;
     private var d_probeAttempt = 0;
+    private var d_retryTimer = null;
+    private var d_waitUntil = 0;
+    private var d_restartAfterRecovery = false;
+    private var d_internetTrialServer = null;
+    private var d_offerServer = null;
+    private var d_confirmationOpen = false;
+    private var d_confirmationHandled = false;
 
     function refreshServers() {
         d_active = true;
@@ -60,6 +81,8 @@ class PlexLoginView extends TextView {
 
     function onShow() {
         d_active = true;
+        if (d_setupWaiting || d_confirmationOpen || (d_retryTimer != null)) { return; }
+        if (d_confirmationHandled) { d_confirmationHandled = false; return; }
         var token = Application.Storage.getValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
         if ((token != null) && !PlexAccount.isConnected()) {
             setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
@@ -72,13 +95,18 @@ class PlexLoginView extends TextView {
     }
 
     function onHide() {
+        Plexit.Utils.log("Plex login onHide: cancelling all network requests");
         d_active = false;
+        stopRetryTimer();
         d_resources = null;
         d_accountToken = null;
         d_candidate = null;
         stopPolling();
         stopProbe();
-        Communications.cancelAllRequests();
+        if (d_loginRequestPending) {
+            d_loginRequestPending = false;
+            cancelLoginRequests();
+        }
     }
 
     function requestPin() {
@@ -92,6 +120,7 @@ class PlexLoginView extends TextView {
         };
         options[:headers].put("Content-Type", Communications.REQUEST_CONTENT_TYPE_URL_ENCODED);
 
+        d_loginRequestPending = true;
         Communications.makeWebRequest(
             "https://plex.tv/api/v2/pins",
             { "strong" => "false" },
@@ -101,6 +130,7 @@ class PlexLoginView extends TextView {
     }
 
     function onPinCreated(responseCode, data) {
+        d_loginRequestPending = false;
         if (!d_active) { return; }
         if ((responseCode != 200) && (responseCode != 201)) {
             showError(WatchUi.loadResource(Rez.Strings.PlexLoginFailed), responseCode);
@@ -146,6 +176,7 @@ class PlexLoginView extends TextView {
         }
 
         d_polling = true;
+        d_loginRequestPending = true;
         Communications.makeWebRequest(
             "https://plex.tv/api/v2/pins/" + d_pinId,
             { "code" => d_code },
@@ -159,6 +190,7 @@ class PlexLoginView extends TextView {
     }
 
     function onPinPolled(responseCode, data) {
+        d_loginRequestPending = false;
         if (!d_active) { return; }
         d_polling = false;
         // Keep the same code after a temporary phone/network outage.
@@ -185,6 +217,7 @@ class PlexLoginView extends TextView {
     }
 
     function discoverServers(accountToken) {
+        d_loginRequestPending = true;
         Communications.makeWebRequest(
             "https://clients.plex.tv/api/v2/resources",
             {
@@ -203,6 +236,7 @@ class PlexLoginView extends TextView {
     }
 
     function onServersDiscovered(responseCode, data, accountToken) {
+        d_loginRequestPending = false;
         if (!d_active) { return; }
         if ((responseCode == 401) || (responseCode == 403)) {
             Application.Storage.deleteValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
@@ -237,8 +271,171 @@ class PlexLoginView extends TextView {
             setText(WatchUi.loadResource(Rez.Strings.ServerListUpdated));
             return;
         }
+        d_setupIds = [];
+        for (var i = 0; i < resources.size(); i += 1) {
+            var r = resources[i];
+            if (!(r instanceof Lang.Dictionary)) { continue; }
+            var record = PlexServers.get(r["clientIdentifier"]);
+            if ((record != null) && (record["token"] != null) && (record["connectionModeChosen"] != true)) {
+                d_setupIds.add(record["id"]);
+            }
+        }
+        d_setupIndex = 0;
+        d_setupResources = resources;
+        d_setupToken = accountToken;
+        d_setupWaiting = true;
+        continueConnectionSetup();
+    }
+
+    function continueConnectionSetup() {
+        stopRetryTimer();
+        d_active = true;
+        if (d_setupIndex < d_setupIds.size()) {
+            var name = PlexServers.name(d_setupIds[d_setupIndex]);
+            showHomeNetworkQuestion(name);
+            return;
+        }
+        d_setupWaiting = false;
+        d_resources = d_setupResources;
+        d_accountToken = d_setupToken;
+        d_setupResources = null;
+        d_setupToken = null;
         d_triedUris = [];
         tryServerConnection();
+    }
+
+    function showHomeNetworkQuestion(name) {
+        if (name.length() > 18) { name = name.substring(0, 17) + "…"; }
+        WatchUi.pushView(new WatchUi.Confirmation(Plexit.I18n.text(Rez.Strings.ServerOnHomeNetwork, [name])),
+            new PlexHomeNetworkConfirmation(self), WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    function onHomeNetworkChoice(home) {
+        PlexServers.setConnectionMode(d_setupIds[d_setupIndex], home
+            ? PlexServers.CONNECTION_AUTO : PlexServers.CONNECTION_INTERNET);
+        d_setupIndex += 1;
+        d_retryTimer = new Timer.Timer();
+        d_retryTimer.start(method(:continueConnectionSetup), 100, false);
+    }
+
+    function compatibilityEnabled() {
+        return (d_candidate != null) && connectionModeFor(d_candidate["serverId"])
+            .equals(PlexServers.CONNECTION_COMPATIBILITY);
+    }
+
+    function connectionModeFor(id) {
+        if ((id != null) && (d_internetTrialServer != null) && id.equals(d_internetTrialServer)) {
+            return PlexServers.CONNECTION_INTERNET;
+        }
+        return PlexServers.connectionMode(PlexServers.get(id));
+    }
+
+    function stopRetryTimer() {
+        if (d_retryTimer != null) { d_retryTimer.stop(); d_retryTimer = null; }
+    }
+
+    function waitForConnection() {
+        if (!d_active) { stopRetryTimer(); return; }
+        var remaining = (d_waitUntil - connectionClock() + 999) / 1000;
+        if (remaining <= 0) {
+            stopRetryTimer();
+            if (d_restartAfterRecovery) { d_restartAfterRecovery = false; restartConnection(); }
+            else { tryServerConnection(); }
+            return;
+        }
+        setText(Plexit.I18n.text(Rez.Strings.ConnectionRecovering, [remaining]));
+    }
+
+    function onInternetChoice(enabled) {
+        d_confirmationOpen = false;
+        d_confirmationHandled = true;
+        d_active = true;
+        if (!enabled) {
+            showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
+            return;
+        }
+        d_internetTrialServer = d_offerServer;
+        // The preceding failed probes can leave Garmin transport busy. Allow
+        // the verified recovery interval before the internet-only trial.
+        d_restartAfterRecovery = true;
+        d_waitUntil = connectionClock() + 60000;
+        d_retryTimer = new Timer.Timer();
+        d_retryTimer.start(method(:waitForConnection), 1000, true);
+        waitForConnection();
+    }
+
+    function restartConnection() {
+        stopRetryTimer();
+        if (!d_active) { return; }
+        var token = Application.Storage.getValue(Plexit.Storage.PLEX_ACCOUNT_TOKEN);
+        if (token == null) { requestPin(); return; }
+        setText(WatchUi.loadResource(Rez.Strings.FindingPlexServer));
+        discoverServers(token);
+    }
+
+    function connectionClock() { return System.getTimer(); }
+    function cancelLoginRequests() { Communications.cancelAllRequests(); }
+    function sendProbe(uri, token, callback) {
+        Communications.makeWebRequest(uri + "/library/sections", null, {
+            :method => Communications.HTTP_REQUEST_METHOD_GET,
+            :headers => PlexAccount.headers(token),
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
+        }, callback);
+    }
+
+    function probeAddressLabel() {
+        var local = false;
+        var position = 0;
+        var total = 0;
+        for (var i = 0; i < d_resources.size(); i += 1) {
+            var r = d_resources[i];
+            if (!(r instanceof Lang.Dictionary) || (r["clientIdentifier"] == null)
+                || !r["clientIdentifier"].equals(d_candidate["serverId"])) { continue; }
+            var connections = r["connections"];
+            for (var j = 0; j < connections.size(); j += 1) {
+                var c = connections[j];
+                if ((c instanceof Lang.Dictionary) && (c["uri"] != null)
+                    && c["uri"].equals(d_candidate["uri"])) { local = c["local"] == true; }
+            }
+            var urls = serverConnectionUrls(r);
+            for (var k = 0; k < urls.size(); k += 1) {
+                var urlLocal = false;
+                for (var n = 0; n < connections.size(); n += 1) {
+                    var c = connections[n];
+                    if ((c instanceof Lang.Dictionary) && (c["uri"] != null)
+                        && c["uri"].equals(urls[k])) { urlLocal = c["local"] == true; }
+                }
+                if (urlLocal == local) {
+                    total += 1;
+                    if (urls[k].equals(d_candidate["uri"])) { position = total; }
+                }
+            }
+        }
+        return Plexit.I18n.text(local ? Rez.Strings.TryLocalAddress : Rez.Strings.TryRemoteAddress, [position, total]);
+    }
+
+    function updateProbeCountdown() {
+        if (!d_active || !d_loginRequestPending) { return; }
+        var now = connectionClock();
+        if (d_probeCancelled) {
+            if (now >= d_cancelDeadline) {
+                stopProbe();
+                Plexit.Utils.log("Plex cancellation callback missing; no further request will be sent");
+                showError(WatchUi.loadResource(Rez.Strings.ConnectionCancelFailed), 0);
+                return;
+            }
+            setText(Plexit.I18n.text(Rez.Strings.ConnectionCancelling, [(d_cancelDeadline - now + 999) / 1000]));
+            return;
+        }
+        if (now >= d_probeDeadline) {
+            d_probeCancelled = true;
+            d_cancelDeadline = now + 5000;
+            Plexit.Utils.log("Plex probe deadline reached; cancelling and waiting up to 5 s for callback");
+            cancelLoginRequests();
+            return;
+        }
+        setText(d_probeLabel + "\n" + Plexit.I18n.text(Rez.Strings.ConnectionStepDeadline,
+            [(d_probeDeadline + 5000 - now + 999) / 1000]));
     }
 
     function tryServerConnection() {
@@ -248,28 +445,36 @@ class PlexLoginView extends TextView {
             d_resources = null;
             d_accountToken = null;
             showError(WatchUi.loadResource(Rez.Strings.NoReachablePlexServer), 0);
+            if ((d_internetTrialServer == null) && (d_offerServer != null)
+                && connectionModeFor(d_offerServer).equals(PlexServers.CONNECTION_AUTO)) {
+                d_confirmationOpen = true;
+                WatchUi.pushView(new WatchUi.Confirmation(WatchUi.loadResource(Rez.Strings.TryInternetConnection)),
+                    new PlexInternetConfirmation(self), WatchUi.SLIDE_IMMEDIATE);
+            }
             return;
         }
 
+        d_offerServer = d_candidate["serverId"];
         d_triedUris.add(d_candidate["uri"]);
-        System.println("Plex connection probe: " + d_candidate["uri"] + "/library/sections");
+        Plexit.Utils.log("Plex connection probe: " + d_candidate["uri"] + "/library/sections");
         // Discovery advertises addresses; it does not prove they are reachable
         // from this phone/watch. Probe with the server token before saving one.
         d_probeAttempt += 1;
-        System.println("Plex probe #" + d_probeAttempt + " started; app deadline: 8000 ms");
-        var probe = new PlexLoginProbe(self, d_probeAttempt);
+        d_probeLabel = probeAddressLabel();
+        var local = PlexServers.isLocalConnection(PlexServers.get(d_candidate["serverId"]), d_candidate["uri"]);
+        d_probeDeadline = connectionClock() + (local ? 2000 : 8000);
+        d_probeCancelled = false;
         d_probeTimer = new Timer.Timer();
-        d_probeTimer.start(probe.method(:expired), 8000, false);
-        Communications.makeWebRequest(
-            d_candidate["uri"] + "/library/sections",
-            null,
-            {
-                :method => Communications.HTTP_REQUEST_METHOD_GET,
-                :headers => PlexAccount.headers(d_candidate["token"]),
-                :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
-            },
-            probe.method(:response)
-        );
+        d_probeTimer.start(method(:updateProbeCountdown), 1000, true);
+        var probe = new PlexLoginProbe(self, d_probeAttempt);
+        d_loginRequestPending = true;
+        sendProbe(d_candidate["uri"], d_candidate["token"], probe.method(:response));
+        updateProbeCountdown();
+    }
+
+    function continueProbe() {
+        stopRetryTimer();
+        if (d_active) { tryServerConnection(); }
     }
 
     function stopProbe() {
@@ -279,17 +484,28 @@ class PlexLoginView extends TextView {
 
     function onProbeResponse(attempt, code, data) {
         if (!d_active || (attempt != d_probeAttempt)) { return; }
+        d_loginRequestPending = false;
+        var expired = d_probeCancelled;
         stopProbe();
-        onServerConnectionChecked(code, data);
+        onServerConnectionChecked((expired && code != 200) ? Communications.NETWORK_REQUEST_TIMED_OUT : code, data);
     }
 
     function onServerConnectionChecked(responseCode, data) {
         if (!d_active) { return; }
         if ((responseCode != 200) || !(data instanceof Lang.Dictionary)
             || !(data["MediaContainer"] instanceof Lang.Dictionary)) {
-            System.println("Plex connection probe failed: " + responseCode + " at "
+            Plexit.Utils.log("Plex connection probe failed: " + responseCode + " at "
                 + ((d_candidate != null) ? d_candidate["uri"] : "unknown") + "/library/sections");
-            tryServerConnection();
+            if (compatibilityEnabled() && (selectServer(d_resources, d_triedUris) != null)) {
+                Plexit.Utils.log("Plex connection recovery: waiting 60 seconds before next address");
+                d_waitUntil = connectionClock() + 60000;
+                d_retryTimer = new Timer.Timer();
+                d_retryTimer.start(method(:waitForConnection), 1000, true);
+                waitForConnection();
+            } else {
+                d_retryTimer = new Timer.Timer();
+                d_retryTimer.start(method(:continueProbe), 100, false);
+            }
             return;
         }
 
@@ -299,7 +515,7 @@ class PlexLoginView extends TextView {
             return;
         }
 
-        System.println("Plex connection probe succeeded: " + selected["uri"] + "/library/sections");
+        Plexit.Utils.log("Plex connection probe succeeded: " + selected["uri"] + "/library/sections");
         PlexAccount.saveServer(
             selected["name"],
             selected["uri"],
@@ -309,7 +525,11 @@ class PlexLoginView extends TextView {
             selected["urls"],
             selected["serverId"]
         );
-        System.println("Plex artwork connection: "
+        if ((d_internetTrialServer != null) && d_internetTrialServer.equals(selected["serverId"])) {
+            PlexServers.setConnectionMode(selected["serverId"], PlexServers.CONNECTION_INTERNET);
+            d_internetTrialServer = null;
+        }
+        Plexit.Utils.log("Plex artwork connection: "
             + ((selected["artworkUri"] != null) ? selected["artworkUri"] : "none; using local fallback"));
         setText(Plexit.I18n.text(Rez.Strings.ConnectedPlex, [selected["name"]]));
         d_resources = null;
@@ -330,6 +550,9 @@ class PlexLoginView extends TextView {
                 continue;
             }
 
+            var id = resource["clientIdentifier"];
+            if ((d_internetTrialServer != null) && ((id == null) || !id.equals(d_internetTrialServer))) { continue; }
+            var mode = connectionModeFor(id);
             var ownedPenalty = (resource["owned"] == true) ? 0 : 100;
             var connections = resource["connections"];
             for (var connectionIndex = 0; connectionIndex < connections.size(); connectionIndex += 1) {
@@ -339,9 +562,11 @@ class PlexLoginView extends TextView {
                     continue;
                 }
 
+                if (mode.equals(PlexServers.CONNECTION_INTERNET) && (connection["local"] == true)) { continue; }
                 var score = ownedPenalty;
                 score += ((connection["protocol"] instanceof Lang.String)
                     && connection["protocol"].equals("https")) ? 0 : 30;
+                // Prefer direct local addresses, then remote, then relay.
                 score += (connection["local"] == true) ? 0 : 10;
                 score += (connection["relay"] == true) ? 20 : 0;
                 if (score < bestScore) {
@@ -372,6 +597,7 @@ class PlexLoginView extends TextView {
             if (urls.size() == 0) { continue; }
             records.add({ "id" => resource["clientIdentifier"], "name" => resource["name"],
                 "token" => resource["accessToken"], "urls" => urls, "uri" => urls[0],
+                "localUrls" => PlexServers.localConnectionUrls(resource["connections"]),
                 "artwork" => findArtworkConnection(resource["connections"]),
                 "custom" => null, "enabled" => true, "status" => "unknown" });
         }
@@ -405,6 +631,7 @@ class PlexLoginView extends TextView {
             if (used) { continue; }
             var protocol = connection["protocol"];
             var score = ((protocol instanceof Lang.String) && protocol.equals("https")) ? 0 : 30;
+            // Prefer direct local addresses, then remote, then relay.
             score += (connection["local"] == true) ? 0 : 10;
             score += (connection["relay"] == true) ? 20 : 0;
             if (score < bestScore) { best = connection["uri"]; bestScore = score; }

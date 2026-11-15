@@ -1,4 +1,6 @@
 <properties>
 	<property id="skip_30s" type="boolean">true</property>
 	<property id="prefer_musicbrainz_artwork" type="boolean">true</property>
+	<!-- Legacy preference retained only to migrate existing per-server modes. -->
+	<property id="connection_compatibility" type="boolean">false</property>
 </properties>

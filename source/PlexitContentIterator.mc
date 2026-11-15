@@ -157,7 +157,7 @@ class PlexitContentIterator extends Media.ContentIterator {
 		try {
 			content = Media.getCachedContentObj(contentRef);
 		} catch (error) {
-			System.println("Cached playback item unavailable: " + error);
+			Plexit.Utils.log("Cached playback item unavailable: " + error);
 			return null;
 		}
 		if (content == null) {

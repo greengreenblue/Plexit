@@ -139,8 +139,8 @@
     <string id="RatingsWaiting_few">$1$ ratings waiting</string>
     <string id="RatingsWaiting_many">$1$ ratings waiting</string>
     <string id="PlexServerAddress">Server address</string>
-    <string id="PlexInvalidServerAddress">Enter a valid HTTPS server address without credentials or query parameters.</string>
-    <string id="PlexServerAddressSaved">Server address saved. Go back and retry Fetch.</string>
+    <string id="PlexInvalidServerAddress">Use HTTPS without login details or URL parameters.</string>
+    <string id="PlexServerAddressSaved">Server address saved. Go back and retry.</string>
     <string id="MusicServers_label">Music servers</string>
     <string id="MusicServer_label">Music server</string>
     <string id="ServerEnabled_label">Enabled</string>
@@ -150,9 +150,24 @@
     <string id="ServerUnknown_label">Not checked</string>
     <string id="ServerUnavailable_label">Access unavailable</string>
     <string id="ServerDisabled_label">Disabled</string>
-    <string id="SyncIncompleteMessage">Some music could not be synced. Please retry when its server is available.</string>
+    <string id="SyncIncompleteMessage">Sync incomplete. Retry when the server is online.</string>
     <string id="RefreshServers_label">Refresh server list</string>
-    <string id="ServerListUpdated">Server list updated. Go back to choose a music server.</string>
-    <string id="UseAutomaticAddress">Use automatic address</string>
-    <string id="AutomaticAddressEnabled">Custom address removed. Plex addresses will be used automatically.</string>
+    <string id="ServerListUpdated">Server list updated. Go back to choose a server.</string>
+    <string id="UseAutomaticAddress">Remove custom address</string>
+    <string id="AutomaticAddressEnabled">Custom address removed. Using Plex addresses.</string>
+    <string id="ConnectionCompatibilityHelp">For failed address switches. Adds 60 s per failed address.</string>
+    <string id="ConnectionRecovering">Recovering… Next try in $1$ s.\nBack = cancel</string>
+    <string id="ServerConnectionMode">Server connection</string>
+    <string id="ConnectionAutomatic">Automatic</string>
+    <string id="ConnectionAutomaticCompatibility">Automatic – compatibility</string>
+    <string id="ConnectionInternet">Internet only</string>
+    <string id="ConnectionAutomaticHelp">Local addresses first, then internet and relay.</string>
+    <string id="ConnectionInternetHelp">For servers outside your home network. Wi-Fi is OK.</string>
+    <string id="TryInternetConnection">Try internet only?</string>
+    <string id="ServerOnHomeNetwork">Is "$1$" on your home network?</string>
+    <string id="TryLocalAddress">Signed in.\nTrying local address $1$ of $2$…</string>
+    <string id="TryRemoteAddress">Signed in.\nTrying remote address $1$ of $2$…</string>
+    <string id="ConnectionStepDeadline">Next step within $1$ s.\nBack = cancel</string>
+    <string id="ConnectionCancelling">Stopping request…\nNext step within $1$ s.\nBack = cancel</string>
+    <string id="ConnectionCancelFailed">Garmin did not confirm cancellation. Exit and retry.</string>
 </strings>

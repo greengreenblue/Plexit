@@ -20,6 +20,7 @@ module Plexit {
 		}
 		
 		function sync() {
+        if (!isActive()) { return false; }
 			if (d_todo == 0) {
 				return Deferrable.complete();
 			}
@@ -40,6 +41,7 @@ module Plexit {
 		}
 		
 		function onRecordPlay(response) {
+        if (!isActive()) { return; }
 			// decrement todos
 			d_todo -= 1;
 			
@@ -51,6 +53,13 @@ module Plexit {
 		}
 		
         function onError(error) {
+        if (!isActive()) { return; }
+        if ((error instanceof Plexit.GarminSdkError)
+            && ((error.respCode() == Toybox.Communications.REQUEST_CANCELLED)
+                || (error.respCode() == Toybox.Communications.BLE_REQUEST_CANCELLED))) {
+            Deferrable.cancel(error);
+            return;
+        }
             // Retain failed events for their own source; continue other servers.
             d_idx += 1;
             d_todo -= 1;

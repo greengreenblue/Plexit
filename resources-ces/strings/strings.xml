@@ -139,8 +139,8 @@
     <string id="RatingsWaiting_few">Čekají $1$ hodnocení</string>
     <string id="RatingsWaiting_many">Čeká $1$ hodnocení</string>
     <string id="PlexServerAddress">Adresa serveru</string>
-    <string id="PlexInvalidServerAddress">Zadejte platnou HTTPS adresu serveru bez přihlašovacích údajů nebo parametrů.</string>
-    <string id="PlexServerAddressSaved">Adresa serveru uložena. Vraťte se a zopakujte načtení.</string>
+    <string id="PlexInvalidServerAddress">Použijte HTTPS bez přihlašovacích údajů a parametrů.</string>
+    <string id="PlexServerAddressSaved">Adresa uložena. Vraťte se a zkuste znovu.</string>
     <string id="MusicServers_label">Hudební servery</string>
     <string id="MusicServer_label">Hudební server</string>
     <string id="ServerEnabled_label">Zapnutý</string>
@@ -150,9 +150,24 @@
     <string id="ServerUnknown_label">Neověřený</string>
     <string id="ServerUnavailable_label">Přístup nedostupný</string>
     <string id="ServerDisabled_label">Vypnutý</string>
-    <string id="SyncIncompleteMessage">Část hudby se nepodařilo synchronizovat. Zkuste to znovu, až bude její server dostupný.</string>
+    <string id="SyncIncompleteMessage">Sync neúplný. Zkuste znovu, až bude server dostupný.</string>
     <string id="RefreshServers_label">Obnovit seznam serverů</string>
-    <string id="ServerListUpdated">Seznam serverů byl obnoven. Vraťte se a vyberte hudební server.</string>
-    <string id="UseAutomaticAddress">Použít automatickou adresu</string>
-    <string id="AutomaticAddressEnabled">Vlastní adresa byla odstraněna. Automaticky se použijí adresy z Plexu.</string>
+    <string id="ServerListUpdated">Seznam obnoven. Vraťte se a vyberte server.</string>
+    <string id="UseAutomaticAddress">Odstranit vlastní adresu</string>
+    <string id="AutomaticAddressEnabled">Vlastní adresa odstraněna. Použijí se adresy Plexu.</string>
+    <string id="ConnectionCompatibilityHelp">Při selhání přepínání adres. Po chybě pauza 60 s.</string>
+    <string id="ConnectionRecovering">Obnovuji spojení… Další pokus za $1$ s.\nZpět = zrušit</string>
+    <string id="ServerConnectionMode">Připojení k serveru</string>
+    <string id="ConnectionAutomatic">Automaticky</string>
+    <string id="ConnectionAutomaticCompatibility">Automaticky – kompatibilita</string>
+    <string id="ConnectionInternet">Pouze přes internet</string>
+    <string id="ConnectionAutomaticHelp">Nejprve místní adresy, potom internet a relay.</string>
+    <string id="ConnectionInternetHelp">Pro server mimo domácí síť. Funguje i přes Wi-Fi.</string>
+    <string id="TryInternetConnection">Zkusit pouze přes internet?</string>
+    <string id="ServerOnHomeNetwork">Je „$1$“ ve vaší domácí síti?</string>
+    <string id="TryLocalAddress">Přihlášeno.\nZkouším místní adresu $1$ z $2$…</string>
+    <string id="TryRemoteAddress">Přihlášeno.\nZkouším vzdálenou adresu $1$ z $2$…</string>
+    <string id="ConnectionStepDeadline">Další krok nejpozději za $1$ s.\nZpět = zrušit</string>
+    <string id="ConnectionCancelling">Zastavuji…\nDalší krok do $1$ s.\nZpět = zrušit</string>
+    <string id="ConnectionCancelFailed">Garmin nepotvrdil zrušení. Ukončete a zkuste znovu.</string>
 </strings>

@@ -139,8 +139,8 @@
     <string id="RatingsWaiting_few">$1$ valoraciones pendientes</string>
     <string id="RatingsWaiting_many">$1$ valoraciones pendientes</string>
     <string id="PlexServerAddress">Dirección del servidor</string>
-    <string id="PlexInvalidServerAddress">Introduce una dirección HTTPS válida del servidor sin credenciales ni parámetros de consulta.</string>
-    <string id="PlexServerAddressSaved">Dirección del servidor guardada. Vuelve e intenta obtener los datos de nuevo.</string>
+    <string id="PlexInvalidServerAddress">Usa HTTPS sin credenciales ni parámetros en la URL.</string>
+    <string id="PlexServerAddressSaved">Dirección guardada. Vuelve e inténtalo de nuevo.</string>
     <string id="MusicServers_label">Servidores de música</string>
     <string id="MusicServer_label">Servidor de música</string>
     <string id="ServerEnabled_label">Activado</string>
@@ -150,9 +150,24 @@
     <string id="ServerUnknown_label">Sin comprobar</string>
     <string id="ServerUnavailable_label">Acceso no disponible</string>
     <string id="ServerDisabled_label">Desactivado</string>
-    <string id="SyncIncompleteMessage">No se pudo sincronizar parte de la música. Inténtalo de nuevo cuando su servidor esté disponible.</string>
+    <string id="SyncIncompleteMessage">Sync incompleta. Reintenta cuando el servidor esté en línea.</string>
     <string id="RefreshServers_label">Actualizar lista de servidores</string>
-    <string id="ServerListUpdated">Lista de servidores actualizada. Vuelve para elegir un servidor de música.</string>
-    <string id="UseAutomaticAddress">Usar dirección automática</string>
-    <string id="AutomaticAddressEnabled">Dirección personalizada eliminada. Se usarán automáticamente las direcciones de Plex.</string>
+    <string id="ServerListUpdated">Lista actualizada. Vuelve y elige un servidor.</string>
+    <string id="UseAutomaticAddress">Eliminar dirección personalizada</string>
+    <string id="AutomaticAddressEnabled">Dirección propia eliminada. Se usarán las de Plex.</string>
+    <string id="ConnectionCompatibilityHelp">Si falla el cambio de dirección. Pausa de 60 s por fallo.</string>
+    <string id="ConnectionRecovering">Reconectando… Próximo intento en $1$ s.\nAtrás = cancelar</string>
+    <string id="ServerConnectionMode">Conexión al servidor</string>
+    <string id="ConnectionAutomatic">Automático</string>
+    <string id="ConnectionAutomaticCompatibility">Automático – compatibilidad</string>
+    <string id="ConnectionInternet">Solo por internet</string>
+    <string id="ConnectionAutomaticHelp">Primero direcciones locales, luego internet y relay.</string>
+    <string id="ConnectionInternetHelp">Para servidores fuera de tu red doméstica. Wi-Fi también.</string>
+    <string id="TryInternetConnection">¿Probar solo por internet?</string>
+    <string id="ServerOnHomeNetwork">¿Está «$1$» en tu red doméstica?</string>
+    <string id="TryLocalAddress">Sesión iniciada.\nProbando dirección local $1$ de $2$…</string>
+    <string id="TryRemoteAddress">Sesión iniciada.\nProbando dirección remota $1$ de $2$…</string>
+    <string id="ConnectionStepDeadline">Siguiente paso en un máximo de $1$ s.\nAtrás = cancelar</string>
+    <string id="ConnectionCancelling">Deteniendo…\nPaso en un máximo de $1$ s.\nAtrás = cancelar</string>
+    <string id="ConnectionCancelFailed">Garmin no confirmó la cancelación. Sal y reintenta.</string>
 </strings>

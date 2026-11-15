@@ -5,4 +5,5 @@
 	<setting propertyKey="@Properties.prefer_musicbrainz_artwork" title="@Strings.prefer_musicbrainz_artwork">
 		<settingConfig type="boolean" required="true" />
 	</setting>
+
 </settings>

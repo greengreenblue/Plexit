@@ -39,7 +39,7 @@ module PlaylistStore {
 	function debugState(context) {
 		var stored = Application.Storage.getValue(Storage.PLAYLISTS);
 		if (!(stored instanceof Lang.Dictionary)) {
-			System.println("PlaylistStore[" + context + "]: no persisted dictionary");
+			Plexit.Utils.log("PlaylistStore[" + context + "]: no persisted dictionary");
 			return;
 		}
 		var values = stored.values();
@@ -48,11 +48,11 @@ module PlaylistStore {
 			var value = values[idx];
 			if ((value instanceof Lang.Dictionary) && (value["local"] == true)) {
 				localCount += 1;
-				System.println("PlaylistStore[" + context + "]: local id=" + value["id"]
+				Plexit.Utils.log("PlaylistStore[" + context + "]: local id=" + value["id"]
 					+ ", synced=" + value["synced"]);
 			}
 		}
-		System.println("PlaylistStore[" + context + "]: total=" + values.size()
+		Plexit.Utils.log("PlaylistStore[" + context + "]: total=" + values.size()
 			+ ", local=" + localCount);
 	}
 }

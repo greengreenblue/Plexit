@@ -139,8 +139,8 @@
     <string id="RatingsWaiting_few">Oceny oczekujące: $1$</string>
     <string id="RatingsWaiting_many">Oceny oczekujące: $1$</string>
     <string id="PlexServerAddress">Adres serwera</string>
-    <string id="PlexInvalidServerAddress">Wpisz prawidłowy adres HTTPS serwera bez danych logowania ani parametrów zapytania.</string>
-    <string id="PlexServerAddressSaved">Zapisano adres serwera. Wróć i ponów pobieranie.</string>
+    <string id="PlexInvalidServerAddress">Użyj HTTPS bez danych logowania i parametrów adresu.</string>
+    <string id="PlexServerAddressSaved">Adres zapisany. Wróć i spróbuj ponownie.</string>
     <string id="MusicServers_label">Serwery muzyczne</string>
     <string id="MusicServer_label">Serwer muzyczny</string>
     <string id="ServerEnabled_label">Włączony</string>
@@ -150,9 +150,24 @@
     <string id="ServerUnknown_label">Niesprawdzony</string>
     <string id="ServerUnavailable_label">Brak dostępu</string>
     <string id="ServerDisabled_label">Wyłączony</string>
-    <string id="SyncIncompleteMessage">Nie udało się zsynchronizować części muzyki. Spróbuj ponownie, gdy jej serwer będzie dostępny.</string>
+    <string id="SyncIncompleteMessage">Sync niepełny. Ponów, gdy serwer będzie dostępny.</string>
     <string id="RefreshServers_label">Odśwież listę serwerów</string>
-    <string id="ServerListUpdated">Zaktualizowano listę serwerów. Wróć i wybierz serwer muzyczny.</string>
-    <string id="UseAutomaticAddress">Użyj automatycznego adresu</string>
-    <string id="AutomaticAddressEnabled">Usunięto własny adres. Adresy Plex będą używane automatycznie.</string>
+    <string id="ServerListUpdated">Lista odświeżona. Wróć i wybierz serwer.</string>
+    <string id="UseAutomaticAddress">Usuń własny adres</string>
+    <string id="AutomaticAddressEnabled">Usunięto własny adres. Używane będą adresy Plex.</string>
+    <string id="ConnectionCompatibilityHelp">Gdy zmiana adresów zawodzi. Po błędzie przerwa 60 s.</string>
+    <string id="ConnectionRecovering">Łączenie ponownie… Próba za $1$ s.\nWstecz = anuluj</string>
+    <string id="ServerConnectionMode">Połączenie z serwerem</string>
+    <string id="ConnectionAutomatic">Automatycznie</string>
+    <string id="ConnectionAutomaticCompatibility">Automatycznie – zgodność</string>
+    <string id="ConnectionInternet">Tylko przez internet</string>
+    <string id="ConnectionAutomaticHelp">Najpierw adresy lokalne, potem internet i relay.</string>
+    <string id="ConnectionInternetHelp">Dla serwera poza siecią domową. Działa też przez Wi-Fi.</string>
+    <string id="TryInternetConnection">Spróbować tylko przez internet?</string>
+    <string id="ServerOnHomeNetwork">Czy „$1$” jest w Twojej sieci domowej?</string>
+    <string id="TryLocalAddress">Zalogowano.\nSprawdzanie adresu lokalnego $1$ z $2$…</string>
+    <string id="TryRemoteAddress">Zalogowano.\nSprawdzanie adresu zdalnego $1$ z $2$…</string>
+    <string id="ConnectionStepDeadline">Następny krok najpóźniej za $1$ s.\nWstecz = anuluj</string>
+    <string id="ConnectionCancelling">Zatrzymywanie…\nDalszy krok do $1$ s.\nWstecz = anuluj</string>
+    <string id="ConnectionCancelFailed">Garmin nie potwierdził anulowania. Wyjdź i ponów.</string>
 </strings>

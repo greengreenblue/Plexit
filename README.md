@@ -91,6 +91,24 @@ saved Plex connection and downloaded music, so you will need to link again.
 
 ## Known issues and limitations
 
+- **Choose a connection mode for each server.** Under **Settings → Music
+  servers → [server] → Server connection**, choose **Automatic** (local addresses
+  first), **Automatic – compatibility** (wait 60 seconds after a failed request
+  before trying the next address), or **Internet only** (skip addresses Plex
+  identifies as local; retain remote and relay addresses). Internet only is useful
+  for a friend's shared server, even when your phone uses Wi-Fi. After account
+  authorization and discovery, new servers ask whether they are on your home
+  network: Yes selects Automatic; No selects Internet only. The mode can later
+  be changed in that server's detailed settings. If automatic sign-in exhausts
+  all addresses, Plexit offers an internet-only trial after a recovery countdown
+  and saves that server's preference only after success. Address probes show
+  local/remote numbering and a bounded countdown (2 seconds for local addresses,
+  8 for remote, followed by at most 5 seconds to acknowledge cancellation).
+  Existing compatibility preferences are preserved during migration.
+- **Transcoded download progress is estimated when the size is unknown.** The
+  estimate uses track duration and target bitrate and advances with received
+  bytes, capped at 95% of the track until it completes. Metadata refresh alone
+  does not mark a selection downloaded; its audio must be saved successfully.
 - **Plex artwork can be slow or unavailable.** Artwork delivery from some Plex
   servers does not work reliably with Garmin's image-download path. Plexit
   therefore prefers MusicBrainz artwork from the Cover Art Archive by default.

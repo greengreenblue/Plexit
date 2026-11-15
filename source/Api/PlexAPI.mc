@@ -12,6 +12,7 @@ class PlexAPI extends Api {
 	private var d_artworkUrl = null;
     private var d_request = null;
     private var d_source = null;
+    private var d_syncSession = null;
     private var d_configured = false;
 
     function isAvailable() {
@@ -35,6 +36,7 @@ class PlexAPI extends Api {
     }
 
     function serverRequest(requestUrl, params, options, callback) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         if (!isAvailable()) { d_fallback.invoke(new Plexit.ApiError(Plexit.ApiError.ACCESS)); return; }
         var base = url();
         var path = requestUrl.substring(base.length(), requestUrl.length());
@@ -46,13 +48,16 @@ class PlexAPI extends Api {
         var record = PlexServers.get(d_source);
         var urls = (retry && (record != null)) ? PlexServers.urls(record) : [base];
         if (retry && (record == null)) { urls = PlexAccount.connectionUrls(base); }
+        if (urls.size() == 0) { d_fallback.invoke(new Plexit.ApiError(Plexit.ApiError.ACCESS)); return; }
         d_request = new PlexServerRequest(urls, path,
             params, options, callback, method(:onWorkingAddress), retry);
+        d_request.setCompatibility(PlexServers.connectionMode(record).equals(PlexServers.CONNECTION_COMPATIBILITY));
         d_request.setFailureCallback(method(:onAddressFailure));
         d_request.start();
     }
 
     function onWorkingAddress(uri) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         Api.updateUrl(uri);
         var record = PlexServers.get(d_source);
         if ((record != null) && (record["token"] instanceof Lang.String) && record["token"].equals(key())) {
@@ -70,11 +75,13 @@ class PlexAPI extends Api {
     }
 
     function onAddressFailure(code) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
         if (PlexServerRequest.canRetry(code)) { PlexServers.status(d_source, "offline"); }
         else if ((code == 401) || (code == 403)) { PlexServers.status(d_source, "unavailable"); }
     }
 
     function initialize(settings, progress, fallback) {
+        d_syncSession = PlexSyncSession.token();
         d_source = settings["server_id"];
         d_configured = (settings["api_url"] != null) && (settings["api_key"] != null);
         Api.initialize("");
@@ -133,11 +140,12 @@ class PlexAPI extends Api {
 			:headers => d_options[:headers],
 			:responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_TEXT_PLAIN,
 		};
-		System.println("Submitting Plex rating for track " + params.get("key"));
+		Plexit.Utils.log("Submitting Plex rating for track " + params.get("key"));
 		serverRequest(url, null, options, self.method(:onRate));
 	}
 
 	function onRate(responseCode, data) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var error = Api.checkResponse(responseCode, data);
 		if (error) {
 			d_fallback.invoke(error);
@@ -147,6 +155,7 @@ class PlexAPI extends Api {
 	}
 
 	function onScrobble(responseCode, data) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var error = Api.checkResponse(responseCode, data);
 		if (error) {
 			d_fallback.invoke(error);
@@ -161,6 +170,7 @@ class PlexAPI extends Api {
 	 * checks Dictionary response and returns the MediaContainer element
 	 */
 	function onResponse(responseCode, data) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		// errors are filtered first
 		var error = Api.checkDictionaryResponse(responseCode, data);
 		if (error) {
@@ -174,13 +184,14 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 
         var url = url() + "/playlists";
-		System.println("playlists: " + url);
+		Plexit.Utils.log("playlists: " + url);
         params = Utils.merge(d_params, params);
 
         serverRequest(url, params, d_options, self.method(:onResponse));
     }
 
     function onPlaylists(responseCode, data) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		// check if request was successful and response is ok
     	var error = Api.checkDictionaryResponse(responseCode, data);
     	if (error) {
@@ -197,7 +208,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 
         var url = url() + "/playlists/" + id + "/items";
-		System.println("playlists_items: " + url);
+		Plexit.Utils.log("playlists_items: " + url);
         params = Utils.merge(d_params, params);
 
         serverRequest(url, params, d_options, self.method(:onResponse));
@@ -207,7 +218,7 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 
         var url = url() + "/playlists/" + id;
-		System.println("playlist: " + url);
+		Plexit.Utils.log("playlist: " + url);
         params = Utils.merge(d_params, params);
         serverRequest(url, params, d_options, self.method(:onResponse));
     }
@@ -221,7 +232,7 @@ class PlexAPI extends Api {
 	function library_sections(callback, params) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections";
-		System.println("library_sections: " + requestUrl);
+		Plexit.Utils.log("library_sections: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -233,7 +244,7 @@ class PlexAPI extends Api {
 	function library_section_all(callback, params, sectionId) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/all";
-		System.println("library_section_all: " + requestUrl);
+		Plexit.Utils.log("library_section_all: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -245,7 +256,7 @@ class PlexAPI extends Api {
 	function library_section_genres(callback, params, sectionId) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/genre";
-		System.println("library_section_genres: " + requestUrl);
+		Plexit.Utils.log("library_section_genres: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -257,7 +268,7 @@ class PlexAPI extends Api {
 	function library_section_collections(callback, params, sectionId) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/sections/" + sectionId + "/collections";
-		System.println("library_section_collections: " + requestUrl);
+		Plexit.Utils.log("library_section_collections: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -269,7 +280,7 @@ class PlexAPI extends Api {
 	function metadata(callback, params, id) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id;
-		System.println("metadata: " + requestUrl);
+		Plexit.Utils.log("metadata: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -281,7 +292,7 @@ class PlexAPI extends Api {
 	function metadata_children(callback, params, id) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id + "/children";
-		System.println("metadata_children: " + requestUrl);
+		Plexit.Utils.log("metadata_children: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -293,7 +304,7 @@ class PlexAPI extends Api {
 	function metadata_all_leaves(callback, params, id) {
 		Api.setCallback(callback);
 		var requestUrl = url() + "/library/metadata/" + id + "/allLeaves";
-		System.println("metadata_all_leaves: " + requestUrl);
+		Plexit.Utils.log("metadata_all_leaves: " + requestUrl);
 		serverRequest(
 			requestUrl,
 			Utils.merge(d_params, params),
@@ -310,10 +321,10 @@ class PlexAPI extends Api {
     function stream(callback, params, id, encoding) {
 		Api.setCallback(callback);
 		Api.beginDownloadProgress();
-		System.println("Starting direct audio download");
+		Plexit.Utils.log("Starting direct audio download");
 
 		var url = url() + id;
-		System.println("Audio download URL: " + url);
+		Plexit.Utils.log("Audio download URL: " + url);
 		params = Plexit.Utils.merge(params, d_params);
 
 		// additional options
@@ -337,8 +348,8 @@ class PlexAPI extends Api {
 		Api.setCallback(callback);
 
 		var url = url() + "/music/:/transcode/universal/decision";
-		System.println("Plex transcode decision endpoint: /music/:/transcode/universal/decision");
-		System.println("Plex transcode request: path=" + params.get("path")
+		Plexit.Utils.log("Plex transcode decision endpoint: /music/:/transcode/universal/decision");
+		Plexit.Utils.log("Plex transcode request: path=" + params.get("path")
 			+ ", protocol=" + params.get("protocol")
 			+ ", bitrate=" + params.get("musicBitrate")
 			+ ", directPlay=" + params.get("directPlay")
@@ -361,18 +372,19 @@ class PlexAPI extends Api {
 		// response with INVALID_HTTP_BODY_IN_NETWORK_RESPONSE.
 		options.put(:responseType, Communications.HTTP_RESPONSE_CONTENT_TYPE_TEXT_PLAIN);
 
-		System.println("Plex transcode decision url: " + url);
+		Plexit.Utils.log("Plex transcode decision url: " + url);
 		// Never print requestParams/options here: both contain the Plex token.
 
 		serverRequest(url, requestParams, options, self.method(:onTranscodeDecision));
 	}
 
 	function onTranscodeDecision(responseCode, data) {
-		System.println("Plex transcode decision response: " + responseCode);
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
+		Plexit.Utils.log("Plex transcode decision response: " + responseCode);
 		if (data instanceof Lang.String) {
 			var end = data.length();
 			if (end > 1200) { end = 1200; }
-			System.println("Plex transcode decision body: " + data.substring(0, end));
+			Plexit.Utils.log("Plex transcode decision body: " + data.substring(0, end));
 		}
 		d_callback.invoke(responseCode, data);
 	}
@@ -385,8 +397,8 @@ class PlexAPI extends Api {
     function music_transcode(callback, params, encoding) {
 		Api.setCallback(callback);
 		Api.beginDownloadProgress();
-		System.println("Starting Plex MP3 transcode download");
-		System.println("Plex transcode start endpoint: /music/:/transcode/universal/start.mp3");
+		Plexit.Utils.log("Starting Plex MP3 transcode download");
+		Plexit.Utils.log("Plex transcode start endpoint: /music/:/transcode/universal/start.mp3");
 
 		// A progressive HTTP MP3 response can be persisted directly by Garmin.
 		// HLS start.m3u8 returns a playlist/segments and is not the requested
@@ -414,13 +426,15 @@ class PlexAPI extends Api {
 	}
 
 	function onStream(responseCode, data) {
-		System.println("Audio download completed with response " + responseCode);
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
+		Plexit.Utils.log("Audio download completed with response " + responseCode);
 		// check if request was successful and response is ok
 		var error = Api.checkContentResponse(responseCode, data);
 		if (error) {
     		d_fallback.invoke(error);
 			return;
 		}
+        Api.finishDownloadProgress();
     	d_callback.invoke(data);
 	}
 
@@ -449,7 +463,7 @@ class PlexAPI extends Api {
 		// metadata first, then use the public Cover Art Archive image so Garmin's
 		// image proxy never needs access to the user's private Plex server.
 		var metadataUrl = url() + "/library/metadata/" + ratingKey;
-		System.println("Resolving public artwork for Plex album " + ratingKey);
+		Plexit.Utils.log("Resolving public artwork for Plex album " + ratingKey);
 		serverRequest(
 			metadataUrl,
 			{ "includeGuids" => 1 },
@@ -459,6 +473,7 @@ class PlexAPI extends Api {
 	}
 
 	function onArtworkMetadata(responseCode, data) {
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
 		var mbid = null;
 		if ((responseCode == 200) && (data instanceof Lang.Dictionary)) {
 			var container = data["MediaContainer"];
@@ -472,7 +487,7 @@ class PlexAPI extends Api {
 		}
 
 		if (mbid == null) {
-			System.println("No MusicBrainz release id; trying Plex artwork");
+			Plexit.Utils.log("No MusicBrainz release id; trying Plex artwork");
 			startPlexPhotoTranscode();
 			return;
 		}
@@ -487,7 +502,7 @@ class PlexAPI extends Api {
 		if (Communications has :PACKING_FORMAT_JPG) {
 			options.put(:packingFormat, Communications.PACKING_FORMAT_JPG);
 		}
-		System.println("Starting public MusicBrainz artwork download: " + mbid);
+		Plexit.Utils.log("Starting public MusicBrainz artwork download: " + mbid);
 		Communications.makeImageRequest(publicUrl, null, options, method(:onPhoto));
 	}
 
@@ -550,7 +565,7 @@ class PlexAPI extends Api {
 			:maxHeight => 101,
 		};
 
-		System.println("Starting Plex artwork download via: " + photoUrl);
+		Plexit.Utils.log("Starting Plex artwork download via: " + photoUrl);
 		Communications.makeImageRequest(photoUrl, null, options, method(:onPhoto));
 	}
 
@@ -567,13 +582,14 @@ class PlexAPI extends Api {
 	}
 
 	function onPhoto(responseCode, data) {
-		System.println("Artwork download completed with response " + responseCode);
+        if (!PlexSyncSession.valid(d_syncSession)) { return; }
+		Plexit.Utils.log("Artwork download completed with response " + responseCode);
 		// check if request was successful and response is ok
 		var error = Api.checkImageResponse(responseCode, data);
 		if (error) {
 			if (d_photoUsingPublic) {
 				d_photoUsingPublic = false;
-				System.println("Public artwork unavailable; trying Plex artwork");
+				Plexit.Utils.log("Public artwork unavailable; trying Plex artwork");
 				startPlexPhotoTranscode();
 				return;
 			}

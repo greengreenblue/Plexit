@@ -66,6 +66,7 @@ class ServerRequestProbe extends PlexServerRequest {
         options = { :responseType => Toybox.Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON };
         PlexServerRequest.initialize(urls, "/library/sections/3/all", parameters,
             options, method(:finished), method(:working), retry);
+        setCompatibility(false);
     }
 
     function sendRequest(url, params, requestOptions) {
@@ -237,5 +238,115 @@ function temporaryPinPollingFailureCanStillAuthorize(logger) {
     var passed = (login.errors == 0)
         && "authorized-test-token".equals(login.discoveredToken);
     state.restore();
+    return passed;
+}
+
+// Capture recovery scheduling without a real minute-long timer or network call.
+(:test)
+class CompatibilityRequestProbe extends ServerRequestProbe {
+    var waitMs = null;
+    function initialize() {
+        ServerRequestProbe.initialize(["https://local", "https://remote"], true);
+        setCompatibility(true);
+    }
+    function waitBeforeRetry(milliseconds) { waitMs = milliseconds; }
+}
+
+(:test)
+function compatibilityWaitsBeforeFallbackAndRemembersWorkingAddress(logger) {
+    var probe = new CompatibilityRequestProbe();
+    probe.start();
+    probe.onResponse(Toybox.Communications.BLE_HOST_TIMEOUT, null);
+    if ((probe.waitMs != 60000) || (probe.sent.size() != 1) || (probe.callbacks != 0)) { return false; }
+    probe.start();
+    probe.onResponse(200, {});
+    return (probe.sent.size() == 2) && (probe.callbacks == 1)
+        && probe.selected.equals("https://remote");
+}
+
+(:test)
+function cancellingRecoveryPreventsNextRequest(logger) {
+    var probe = new CompatibilityRequestProbe();
+    probe.start();
+    probe.onResponse(Toybox.Communications.BLE_HOST_TIMEOUT, null);
+    probe.cancel();
+    probe.start();
+    return (probe.waitMs == 60000) && (probe.sent.size() == 1) && (probe.callbacks == 0);
+}
+
+(:test)
+function compatibilityDoesNotRetryAuthenticationFailure(logger) {
+    var probe = new CompatibilityRequestProbe();
+    probe.start();
+    probe.onResponse(401, null);
+    return (probe.waitMs == null) && (probe.sent.size() == 1)
+        && (probe.callbacks == 1) && (probe.result == 401);
+}
+
+(:test)
+function internetModeSkipsSavedLocalAndKeepsRemoteRelay(logger) {
+    var state = new MultiServerTestState();
+    var record = state.records()[0];
+    record["urls"] = ["https://local", "https://remote", "https://relay"];
+    record["localUrls"] = ["https://local"];
+    record["uri"] = "https://local";
+    record["custom"] = "https://local";
+    record["connectionMode"] = PlexServers.CONNECTION_INTERNET;
+    PlexServers.save(record);
+    var urls = PlexServers.urls(record);
+    var stored = PlexServers.get(record["id"]);
+    var passed = (urls.size() == 2) && urls[0].equals("https://remote")
+        && urls[1].equals("https://relay") && (stored["urls"].size() == 3);
+    PlexServers.setConnectionMode(record["id"], PlexServers.CONNECTION_AUTO);
+    passed = passed && (PlexServers.urls(PlexServers.get(record["id"])).size() == 3);
+    state.restore();
+    return passed;
+}
+
+(:test)
+function connectionModesBelongToIndividualServersAndSurviveDiscovery(logger) {
+    var state = new MultiServerTestState();
+    PlexServers.remember(state.records());
+    PlexServers.setConnectionMode("test-server-a", PlexServers.CONNECTION_INTERNET);
+    PlexServers.setConnectionMode("test-server-b", PlexServers.CONNECTION_COMPATIBILITY);
+    PlexServers.remember(state.records());
+    var passed = PlexServers.connectionMode(PlexServers.get("test-server-a")).equals(PlexServers.CONNECTION_INTERNET)
+        && PlexServers.connectionMode(PlexServers.get("test-server-b")).equals(PlexServers.CONNECTION_COMPATIBILITY);
+    state.restore();
+    return passed;
+}
+
+(:test)
+function internetModeFiltersLoginUsingPlexFlags(logger) {
+    var state = new MultiServerTestState();
+    PlexServers.remember(state.records());
+    PlexServers.setConnectionMode("test-server-a", PlexServers.CONNECTION_INTERNET);
+    var login = new PlexLoginView();
+    var resources = [{ "name" => "Test", "clientIdentifier" => "test-server-a",
+        "provides" => "server", "owned" => true, "accessToken" => "token-a",
+        "connections" => [
+            { "uri" => "https://local", "protocol" => "https", "local" => true },
+            { "uri" => "https://remote", "protocol" => "https", "local" => false },
+            { "uri" => "https://relay", "protocol" => "https", "local" => false, "relay" => true }
+        ] }];
+    login.rememberDiscoveredServers(resources);
+    var first = login.selectServer(resources, []);
+    var second = login.selectServer(resources, ["https://remote"]);
+    var passed = first["uri"].equals("https://remote") && second["uri"].equals("https://relay")
+        && (login.selectServer(resources, ["https://remote", "https://relay"]) == null)
+        && (PlexServers.get("test-server-a")["localUrls"].size() == 1)
+        && (first["urls"].size() == 3);
+    state.restore();
+    return passed;
+}
+
+(:test)
+function legacyCompatibilityMigratesWithoutOverridingExplicitAutomatic(logger) {
+    var previous = Toybox.Application.Properties.getValue("connection_compatibility");
+    Toybox.Application.Properties.setValue("connection_compatibility", true);
+    var passed = PlexServers.connectionMode({}).equals(PlexServers.CONNECTION_COMPATIBILITY)
+        && PlexServers.connectionMode({"connectionMode" => PlexServers.CONNECTION_AUTO}).equals(PlexServers.CONNECTION_AUTO)
+        && PlexServers.connectionMode(null).equals(PlexServers.CONNECTION_AUTO);
+    Toybox.Application.Properties.setValue("connection_compatibility", previous);
     return passed;
 }

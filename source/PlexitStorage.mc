@@ -130,7 +130,7 @@ module Plexit {
 						try {
 							Media.deleteCachedItem(contentRef);
 						} catch (error) {
-							System.println("Deprecated cached audio already unavailable: " + error);
+							Plexit.Utils.log("Deprecated cached audio already unavailable: " + error);
 						}
 				}
 			}

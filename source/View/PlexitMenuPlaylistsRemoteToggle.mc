@@ -391,7 +391,7 @@ module Plexit {
                 }
                 var playlist = findCollection(id);
                 if (playlist == null) {
-                    System.println("Offline selection ignored: missing collection " + id);
+                    Plexit.Utils.log("Offline selection ignored: missing collection " + id);
                     return;
                 }
                 var localPlaylist = new IPlaylist(id);
@@ -403,7 +403,7 @@ module Plexit {
                 }
                 var saved = localPlaylist.setLocal(item.isEnabled());
                 var persisted = new IPlaylist(id);
-                System.println("Offline selection: id=" + id
+                Plexit.Utils.log("Offline selection: id=" + id
                     + ", enabled=" + item.isEnabled()
                     + ", saved=" + saved
                     + ", stored=" + persisted.stored()
