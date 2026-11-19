@@ -45,6 +45,10 @@ module PlexSource {
         return implicitServer();
     }
 
+    function sameServer(a, b) {
+        return (a == null) ? (b == null) : a.equals(b);
+    }
+
     // Server owning IDs without an explicit server prefix.
     function implicitServer() {
         var legacy = Application.Storage.getValue(Plexit.Storage.PLEX_LEGACY_SERVER_ID);

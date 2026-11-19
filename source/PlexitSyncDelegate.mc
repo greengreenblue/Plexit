@@ -67,8 +67,7 @@ module Plexit {
 			var songIds = SongStore.getIds();
 			var cachedSongs = 0;
 			for (var idx = 0; idx < songIds.size(); ++idx) {
-				var song = new ISong(songIds[idx]);
-				if (song.refId() != null) { cachedSongs += 1; }
+				if (SongStore.isCached(songIds[idx])) { cachedSongs += 1; }
 			}
 			Plexit.Utils.log("Sync verification: cached=" + cachedSongs
 				+ ", songs=" + songIds.size()

@@ -33,7 +33,7 @@ module Plexit {
 				var songCount = 0;
 				var songIds = SongStore.getIds();
 				for (var idx = 0; idx < songIds.size(); ++idx) {
-					if ((new ISong(songIds[idx])).refId() != null) {
+					if (SongStore.isCached(songIds[idx])) {
 						songCount += 1;
 					}
 				}
