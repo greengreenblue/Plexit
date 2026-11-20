@@ -196,7 +196,10 @@ module Plexit {
 
 				var megabytes = bytes / (1024.0 * 1024.0);
 				var prefix = estimated ? "~" : "";
-				return Plexit.I18n.songs(downloaded) + " / " + prefix + megabytes.format("%.1f") + " MB";
+				var count = (downloaded < songIds.size())
+					? downloaded.toString() + "/" + Plexit.I18n.songs(songIds.size())
+					: Plexit.I18n.songs(downloaded);
+				return count + " / " + prefix + megabytes.format("%.1f") + " MB";
 			}
 
 			function load() {
