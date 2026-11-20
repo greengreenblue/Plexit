@@ -375,6 +375,12 @@ class IPlaylist extends Playlist {
 			
 			// if remove returns true, it was already on the old list, so nothing to do
 			if (songs_now.remove(id)) {
+				// An interrupted sync can leave a listed song unreferenced; it is
+				// then deleted and the playlist never completes. Restore the
+				// reference so the song is downloaded again.
+				if (linked() && (isong.refCount() <= 0)) {
+					isong.incRefCount();
+				}
 				continue;
 			}
 			
